@@ -32,8 +32,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import random
+from collections import Counter
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -123,11 +125,21 @@ MODEL_SPECS = [
     ("mart_campaign_roi",     "marts",     "marketing",    "table",     4,  26.5,  ["marts"]),
     ("mart_funnel",           "marts",     "marketing",    "table",     3,  19.0,  ["marts"]),
     ("mart_cohorts",          "marts",     "revenue",      "table",     2,  35.0,  ["marts", "expensive"]),
-    # snapshots live outside models/, so the path rule lands them on '(root)'.
-    # That is a faithful quirk of the derivation, not a bug in the data.
+    # Snapshots. Their file lives at snapshots/<name>.sql rather than under models/,
+    # so the path rule would land them on '(root)'; model_rows() states
+    # layer='snapshots' instead, which is what the semantic model's SQL now does.
     ("snap_customer_tier",    "snapshots", "",             "snapshot",  1,   3.1,  ["snapshot"]),
     ("snap_product_price",    "snapshots", "",             "snapshot",  1,   1.4,  ["snapshot"]),
 ]
+
+# Snapshot comparison strategy. dbt records this in dim_dbt__snapshots; models have
+# no equivalent, so it stays blank for them. One of each value so the sample
+# exercises both - a check strategy compares every configured column on every run
+# and so reads more than a timestamp one.
+SNAPSHOT_STRATEGY = {
+    "snap_customer_tier": "check",
+    "snap_product_price": "timestamp",
+}
 
 
 def model_path(name: str, folder: str, subfolder: str) -> str:
@@ -352,7 +364,15 @@ class Generator:
             "error_message": err_msg,
             "user_email": user_email,
             "statement_type": statement_type_final,
-            "queryhash": hash_hex(self.rng, 16) if not query else f"{abs(hash(query)) & 0xFFFFFFFFFFFFFFFF:016x}",
+            # blake2b, not the builtin hash(): hash() on a str is salted per process
+            # (PEP 456), so it returned a different value for the same SQL on every
+            # run. That made jobs.csv non-reproducible - a regeneration rewrote this
+            # column on all 4,135 top-level rows and buried any real change in the
+            # diff - which defeats the point of committing seeded sample data. The
+            # requirement is only that identical SQL hashes identically, which is what
+            # the report's queryhash dedup relies on, so any stable digest will do.
+            "queryhash": hash_hex(self.rng, 16) if not query
+                         else hashlib.blake2b(query.encode("utf-8"), digest_size=8).hexdigest(),
             "region": region,
             "bie_mode": bie_mode,
             "label_app": label_app,
@@ -472,8 +492,12 @@ class Generator:
                 "command_invocation_id": inv_id,
                 "node_id": node_id_for(name, matz),
                 "node_name": name,
-                # 'Model' covers snapshots too - both come from model_executions.
-                "node_type": "Model",
+                # A snapshot is its own node_type, not a model. dbt_artifacts records
+                # snapshot runs in stg_dbt__snapshot_executions - a separate table from
+                # model executions - and the semantic model unions that branch in as
+                # 'Snapshot'. Emitting 'Model' here made the sample data disagree with
+                # the BigQuery source it is supposed to stand in for.
+                "node_type": "Snapshot" if matz == "snapshot" else "Model",
                 "alias": name,
                 "schema_name": target_schema,
                 "materialization": matz,
@@ -481,8 +505,12 @@ class Generator:
                 # Skipped and ephemeral nodes never reach BigQuery, so they have no
                 # job id. A blank would be a duplicate on the one side of the
                 # relationship to Fact, so a per-execution sentinel stands in - the
-                # same COALESCE the BigQuery query applies.
-                "job_id": job_id or f"no-job:model:{exec_id}",
+                # same COALESCE the BigQuery query applies. The prefix names the branch
+                # that produced the row, so it has to track node_type.
+                "job_id": job_id or (
+                    f"no-job:snapshot:{exec_id}" if matz == "snapshot"
+                    else f"no-job:model:{exec_id}"
+                ),
                 "adapter_code": "" if status == "skipped" else ("ERROR" if status == "error" else "OK"),
                 "message": "" if status == "success" else (
                     "Skipped because an upstream node failed" if status == "skipped"
@@ -816,15 +844,24 @@ class Generator:
 def model_rows() -> tuple[list[dict], list[dict]]:
     """Rows for dbt_models and dbt_model_tags.
 
-    Models and snapshots only - no tests. Both come from dbt_artifacts'
-    dim_dbt__models, which does not hold tests; tests come from dim_dbt__tests and
-    reach a layer by pointing their node_id at the model they test.
+    Models and snapshots only - no tests. Models come from dbt_artifacts'
+    dim_dbt__models and snapshots from dim_dbt__snapshots; the semantic model unions
+    the two so a snapshot resolves a layer, schema and name like a model does.
+    Neither source holds tests - those come from dim_dbt__tests and reach a layer by
+    pointing their node_id at the model they guard.
     """
     models, tags = [], []
     for (name, folder, subfolder, matz, upstream, scan_gb, tag_list) in MODEL_SPECS:
         node_id = node_id_for(name, matz)
         path = model_path(name, folder, subfolder)
-        layer, sublayer = derive_layer_sublayer(path)
+        is_snapshot = matz == "snapshot"
+        if is_snapshot:
+            # Stated, not derived, matching the semantic model. Parsing
+            # 'snapshots/<name>.sql' yields '(root)', which would file snapshots
+            # alongside the models that sit loose at the top of models/.
+            layer, sublayer = "snapshots", ""
+        else:
+            layer, sublayer = derive_layer_sublayer(path)
         models.append({
             "node_id": node_id,
             "model_name": name,
@@ -837,9 +874,15 @@ def model_rows() -> tuple[list[dict], list[dict]]:
             "package_name": DBT_PROJECT,
             "path": path,
             "checksum": f"sha256:{name[:8]}",
-            "tags": ", ".join(tag_list),
+            # dim_dbt__snapshots records no tags array, so a snapshot's tags column is
+            # empty here too - even though the bridge below still gets a 'snapshot'
+            # row. That tag is synthesized report-side so snapshots stay reachable
+            # from a tag slicer; it is deliberately not echoed back into this column.
+            "tags": "" if is_snapshot else ", ".join(tag_list),
             "meta": "{}",
             "upstream_count": upstream,
+            "node_kind": "Snapshot" if is_snapshot else "Model",
+            "strategy": SNAPSHOT_STRATEGY.get(name, "") if is_snapshot else "",
         })
         for t in tag_list:
             tags.append({"node_id": node_id, "tag": t})
@@ -885,7 +928,7 @@ NODE_EXECUTION_COLUMNS = [
 MODEL_COLUMNS = [
     "node_id", "model_name", "alias", "layer", "sublayer", "materialization",
     "schema_name", "database_name", "package_name", "path", "checksum", "tags",
-    "meta", "upstream_count",
+    "meta", "upstream_count", "node_kind", "strategy",
 ]
 
 STATEMENT_COLUMNS = [
@@ -959,6 +1002,16 @@ def summarise(gen: Generator) -> dict:
     failed_nodes = [n for n in node_exec if n["status"] in ("error", "fail")]
     skipped_nodes = [n for n in node_exec if n["status"] == "skipped"]
 
+    # Snapshots were previously counted inside 'models', which read as 27 models when
+    # 2 of those were snapshots. Reported apart so the figure means what it says.
+    snapshot_specs = [m for m in MODEL_SPECS if m[3] == "snapshot"]
+    by_type = Counter(n["node_type"] for n in node_exec)
+    print()
+    print("  node executions by type:")
+    for t in ("Model", "Snapshot", "Test"):
+        if by_type.get(t):
+            print(f"    {t:<10} {by_type[t]:>6,}")
+
     return {
         "window_start": WINDOW_START.isoformat(),
         "window_end": (WINDOW_END - timedelta(days=1)).isoformat(),
@@ -968,7 +1021,8 @@ def summarise(gen: Generator) -> dict:
         "invocations": len(gen.invocations),
         "node_executions": len(node_exec),
         "script_statements": len(gen.job_statements),
-        "models": len(MODEL_SPECS),
+        "models": len(MODEL_SPECS) - len(snapshot_specs),
+        "snapshots": len(snapshot_specs),
         "tests": len(TEST_SPECS),
         "users": len({j["user_email"] for j in jobs}),
         "spend_total": round(usd(top), 2),
@@ -1021,20 +1075,36 @@ def check_invariants(gen: Generator, models: list[dict]) -> None:
         problems.append(f"{len(orphans)} node execution(s) reference a job_id "
                         f"absent from jobs.csv")
 
-    # Every test row must reach a model row, or it inherits no layer.
+    # Every node execution must reach a dbt_models row, whatever its type, or it
+    # inherits no layer and drops into a blank bucket in every visual grouped by a
+    # dbt_models column. This used to check tests only; snapshots need it just as
+    # much, and they only resolve because dim_dbt__snapshots is unioned into that
+    # dimension - so checking all types is what actually guards the union.
     model_node_ids = {m["node_id"] for m in models}
     unreachable = {n["node_id"] for n in gen.node_executions
-                   if n["node_type"] == "Test" and n["node_id"] not in model_node_ids}
+                   if n["node_id"] not in model_node_ids}
     if unreachable:
-        problems.append(f"{len(unreachable)} test row(s) point at a node_id with no "
-                        f"dbt_models row")
+        problems.append(f"{len(unreachable)} node execution node_id(s) have no "
+                        f"dbt_models row, e.g. {sorted(unreachable)[:3]}")
+
+    # A sentinel's prefix names the branch that produced the row, and the BigQuery
+    # query builds it per branch, so the two must agree. A mismatch is still unique
+    # and would not break the refresh - it would just misreport provenance, which is
+    # exactly the kind of thing no visual would ever surface.
+    mismatched = [n["job_id"] for n in gen.node_executions
+                  if n["job_id"].startswith("no-job:")
+                  and not n["job_id"].startswith(f"no-job:{n['node_type'].lower()}:")]
+    if mismatched:
+        problems.append(f"{len(mismatched)} sentinel job_id(s) do not match their "
+                        f"node_type, e.g. {sorted(mismatched)[:2]}")
 
     if problems:
         print("\n  INVARIANT FAILURES:")
         for p in problems:
             print(f"    - {p}")
         raise SystemExit(1)
-    print("  invariants OK (job_id unique and non-blank, no orphans, tests reach models)")
+    print("  invariants OK (job_id unique and non-blank, no orphans, every node "
+          "reaches a dbt_models row, sentinels match their node_type)")
 
 
 def main() -> None:

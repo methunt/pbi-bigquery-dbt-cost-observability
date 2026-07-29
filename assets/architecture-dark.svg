@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-label="How the model is wired, from BigQuery and dbt metadata through to the report pages">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 402" width="1200" height="402" role="img" aria-label="How the model is wired, from BigQuery and dbt metadata through to the report pages">
   <style>
     .node { animation: fade .5s ease-out both; }
     .node:nth-of-type(1) { animation-delay:.05s }
@@ -14,9 +14,12 @@
     @keyframes march { from { stroke-dashoffset: 48 } to { stroke-dashoffset: 0 } }
     @media (prefers-reduced-motion: reduce) { .node,.dash { animation: none } }
   </style>
-  <rect width="1200" height="430" fill="#0D1117"/>
-  <text x="36" y="28" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15.5" font-weight="600"
-        fill="#484F58" letter-spacing="1.4">HOW IT IS WIRED</text>
+  <rect width="1200" height="402" fill="#0D1117"/>
+  <!-- No title inside the asset. The README carries the "How it is wired" heading
+       immediately above it, so painting it again repeated the words and spent 28px
+       of height on them. Everything below shifts up by that 28 via one transform
+       rather than by rewriting every coordinate in the diagram. -->
+  <g transform="translate(0,-28)">
 
   <path d="M286,98 C326.0,98 326.0,200 366,200" fill="none" stroke="#30363D" stroke-width="1.5"/>
   <path class="dash" style="animation-delay:0.0s" d="M286,98 C326.0,98 326.0,200 366,200" fill="none"
@@ -58,7 +61,7 @@
     <rect x="36" y="176" width="250" height="3" rx="1.5" fill="#8B5CF6"/>
     <text x="52" y="204" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">dbt_artifacts</text>
-    <text x="52" y="226" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">model + test executions</text><text x="52" y="243" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">invocations · models · tags</text><text x="52" y="260" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">27 models · 14 tests</text><text x="52" y="277" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">adapter_response → job_id</text>
+    <text x="52" y="226" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">model + test + snapshot execs</text><text x="52" y="243" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">invocations · models · tags</text><text x="52" y="260" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">adapter_response → job_id</text>
   </g>
   <g class="node">
     <rect x="36" y="300" width="250" height="104" rx="10" fill="#161B22"
@@ -66,7 +69,7 @@
     <rect x="36" y="300" width="250" height="3" rx="1.5" fill="#10B981"/>
     <text x="52" y="328" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">sample-data/*.csv</text>
-    <text x="52" y="350" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">the committed synthetic month</text><text x="52" y="367" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">4,894 jobs</text><text x="52" y="384" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">2026-06-01 to 2026-06-30</text><text x="52" y="401" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">no cloud account required</text>
+    <text x="52" y="350" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">the committed synthetic month</text><text x="52" y="367" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">generated from a fixed seed</text><text x="52" y="384" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">no cloud account required</text>
   </g>
   <g class="node">
     <rect x="366" y="150" width="214" height="150" rx="10" fill="#161B22"
@@ -95,4 +98,5 @@
   <text x="366" y="348" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="15" fill="#484F58">
     p_DataSource = "SampleCSV" | "BigQuery"
   </text>
+  </g>
 </svg>

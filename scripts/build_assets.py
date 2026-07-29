@@ -200,7 +200,18 @@ def hero(p: dict, s: dict) -> str:
 # 2. Architecture / dataflow
 # --------------------------------------------------------------------------- #
 
-def architecture(p: dict, s: dict) -> str:
+def architecture(p: dict, _s: dict) -> str:
+    """The dataflow diagram. Deliberately carries NO figures from summary.json.
+
+    It used to print row counts and the date window, which meant regenerating the
+    sample data rewrote this asset too - so a data refresh produced a diff in a
+    diagram whose actual subject, the shape of the pipeline, had not changed. The
+    numbers belong in the README's own tables, where they are read in context.
+
+    The `_s` parameter exists only because main() calls every builder with the same
+    signature. If you find yourself reaching for it, the figure you want almost
+    certainly belongs in the README text instead.
+    """
     def box(x, y, w, h, title, lines, accent, dashed=False):
         dash = ' stroke-dasharray="5 4"' if dashed else ""
         # 10.5 renders at 7.9 in GitHub's ~900px column, which is below the
@@ -240,12 +251,12 @@ def architecture(p: dict, s: dict) -> str:
             "one row per job", "filtered to on-demand jobs",
         ], "primary")
         + box(36, 176, 250, 104, "dbt_artifacts", [
-            "model + test executions", "invocations · models · tags",
-            f"{s['models']} models · {s['tests']} tests", "adapter_response → job_id",
+            "model + test + snapshot execs", "invocations · models · tags",
+            "adapter_response → job_id",
         ], "violet")
         + box(36, 300, 250, 104, "sample-data/*.csv", [
             "the committed synthetic month",
-            f"{s['jobs_total']:,} jobs", f"{s['window_start']} to {s['window_end']}",
+            "generated from a fixed seed",
             "no cloud account required",
         ], "good", dashed=True)
         + box(366, 150, 214, 150, "Power Query", [
@@ -273,7 +284,7 @@ def architecture(p: dict, s: dict) -> str:
         + flow(890, 225, 958, 225, 1.35, "warn")
     )
 
-    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-label="How the model is wired, from BigQuery and dbt metadata through to the report pages">
+    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 402" width="1200" height="402" role="img" aria-label="How the model is wired, from BigQuery and dbt metadata through to the report pages">
   <style>
     .node {{ animation: fade .5s ease-out both; }}
     .node:nth-of-type(1) {{ animation-delay:.05s }}
@@ -289,14 +300,18 @@ def architecture(p: dict, s: dict) -> str:
     @keyframes march {{ from {{ stroke-dashoffset: 48 }} to {{ stroke-dashoffset: 0 }} }}
     @media (prefers-reduced-motion: reduce) {{ .node,.dash {{ animation: none }} }}
   </style>
-  <rect width="1200" height="430" fill="__BG__"/>
-  <text x="36" y="28" font-family="__FONT__" font-size="15.5" font-weight="600"
-        fill="__FAINT__" letter-spacing="1.4">HOW IT IS WIRED</text>
+  <rect width="1200" height="402" fill="__BG__"/>
+  <!-- No title inside the asset. The README carries the "How it is wired" heading
+       immediately above it, so painting it again repeated the words and spent 28px
+       of height on them. Everything below shifts up by that 28 via one transform
+       rather than by rewriting every coordinate in the diagram. -->
+  <g transform="translate(0,-28)">
 {flows}
 {boxes}
   <text x="366" y="348" font-family="__MONO__" font-size="15" fill="__FAINT__">
     p_DataSource = "SampleCSV" | "BigQuery"
   </text>
+  </g>
 </svg>
 """
     return paint(template, p)

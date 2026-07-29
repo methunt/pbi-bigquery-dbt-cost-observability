@@ -15,12 +15,12 @@
   <img alt="Pages" src="https://img.shields.io/badge/report-7%20pages-7C3AED?style=flat-square">
 </p>
 
-A Power BI semantic model over BigQuery's own job history. It answers two questions that cloud billing cannot: **where did the warehouse spend go**, and **which dbt model, test or hook spent it**.
+A Power BI semantic model over BigQuery's own job history. It answers two questions that cloud billing cannot: **where did the warehouse spend go**, and **which dbt model, snapshot, test or hook spent it**.
 
 | | | |
 |---|---|---|
 | 🔎 | **[Part 1 · Query & Usage Insights](#-part-1)** | Everything running on the warehouse — who spends, on what, how long it takes, how much was cache, and which statements are worth rewriting. **No dbt required.** |
-| 🧱 | **[Part 2 · dbt on BigQuery](#-part-2)** | The transformation layer — what each model costs, which runs are healthy, what broke, all joined back to BigQuery billing. |
+| 🧱 | **[Part 2 · dbt on BigQuery](#-part-2)** | The transformation layer — what each model costs, which runs are healthy, what broke, all joined back to BigQuery billing. Needs the **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/Data-Engineering/tree/main/dbt%20Template%20for%20BigQuery%20Cost%20Observability%20PBI%20Report)** wired up. |
 | ▶️ | **[Part 3 · Run it yourself](#-part-3)** | Clone, set the parameters, refresh. Works offline against committed sample data. |
 
 ---
@@ -30,7 +30,7 @@ A Power BI semantic model over BigQuery's own job history. It answers two questi
 | 1️⃣ Billing is one number | 2️⃣ It tells you what to fix first | 3️⃣ It separates avoidable spend from real spend |
 |---|---|---|
 | Cloud billing tells you the project cost $X today. It cannot tell you which user, which query, or which model. | Cost is never spread evenly, so optimisation effort should not be either. | Some of the bill buys you nothing, and that part is the cheapest to remove — no rewriting required. |
-| **Part 1** breaks the bill down by user, statement, region and hour. **Part 2** breaks it down by dbt model, test and hook — including post-hook jobs that dbt's own metadata never records. | In the sample month the **three most expensive target tables carry about two-thirds of the dbt bill**, and **service accounts outspend every human combined**. Both are one glance, not an investigation. | Cache hits bill nothing, BI Engine acceleration cuts billed bytes, and small queries pay a 10 MB floor whether they need it or not. The report shows how much of your spend is each — plus the `dev` / `uat` / `prod` split, which is where surprises usually live. |
+| **Part 1** breaks the bill down by user, statement, region and hour. **Part 2** breaks it down by dbt model, snapshot, test and hook — including post-hook jobs that dbt's own metadata never records. | In the sample month the **three most expensive target tables carry about two-thirds of the dbt bill**, and **service accounts outspend every human combined**. Both are one glance, not an investigation. | Cache hits bill nothing, BI Engine acceleration cuts billed bytes, and small queries pay a 10 MB floor whether they need it or not. The report shows how much of your spend is each — plus the `dev` / `uat` / `prod` split, which is where surprises usually live. |
 
 ---
 
@@ -116,9 +116,12 @@ Right-click any pattern or job and drill through to a single statement: the SQL 
   <img alt="Part 2 — dbt on BigQuery. What the transformation layer costs, how much it builds, and whether it is healthy. Needs dbt_artifacts." src="assets/section-dbt-light.svg">
 </picture>
 
+> [!TIP]
+> Needs `dbt_artifacts` and job labels already wired up in your dbt project — the **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/Data-Engineering/tree/main/dbt%20Template%20for%20BigQuery%20Cost%20Observability%20PBI%20Report)** sets both up for you.
+
 ![dbt on BigQuery, cycling between the Overview and Explore tabs](assets/tour-dbt-jobs.gif)
 
-Same shape, different subject. In the sample month **$470.60 — 71.0% of the entire BigQuery bill — is dbt**, across 27 models and 1,003 test executions, at $5.12 per run.
+Same shape, different subject. In the sample month **$470.60 — 71.0% of the entire BigQuery bill — is dbt**, across 25 models, 2 snapshots and 1,003 test executions, at $5.12 per run.
 
 ### Overview
 
@@ -127,7 +130,7 @@ Same shape, different subject. In the sample month **$470.60 — 71.0% of the en
 | 💸 | **Spend over time** | Daily dbt cost split by **environment** — `dev`, `uat`, `prod`. Non-prod spend that rivals prod is a common and expensive surprise, and it stays invisible unless you split on it. |
 | 🟩 | **Run outcomes** | Nodes succeeding, skipped and failing per day. A wall of green with one grey column tells you where to look. |
 | 🎯 | **Where the money goes** | Cost per **target table**, most expensive first, every table, scrollable. Click a bar to filter the page. |
-| 🧱 | **Execution by layer** | `staging` / `marts` / `warehouse` / `(root)` — models, a health chip, runtime, tests and failures per layer. Layers come from each model's file path, so this is dbt's own structure, not a tag you have to maintain. |
+| 🧱 | **Execution by layer** | `staging` / `warehouse` / `marts` / `snapshots` — nodes, a health chip, runtime, tests and failures per layer. Layers come from each model's file path, so this is dbt's own structure, not a tag you have to maintain. Snapshots are the one exception: they sit outside `models/`, so they are labelled `snapshots` rather than parsed. |
 | 🧾 | **Recent dbt runs** | The last 5 invocations — command, target, execution time, health. Deliberately ignores the date filter, so it always answers "how did the most recent runs go". |
 | 📊 | **Runtime bands by layer** | Whether slowness is spread across a layer or concentrated in a few models. |
 
@@ -136,7 +139,7 @@ Same shape, different subject. In the sample month **$470.60 — 71.0% of the en
 
 ### Nodes failed
 
-Six KPIs put failure in proportion before you read a chart: **23 of 2,719** node outcomes needed attention — 4 models, 9 of 1,003 tests, 0 warnings, 10 skipped, **644 failing rows**.
+Six KPIs put failure in proportion before you read a chart: **23 of 2,719** node outcomes needed attention — 3 models, 1 snapshot, 9 of 1,003 tests, 0 warnings, 10 skipped, **644 failing rows**.
 
 | | Visual | The question |
 |---|---|---|
@@ -155,7 +158,7 @@ Six KPIs put failure in proportion before you read a chart: **23 of 2,719** node
 
 ### Explore
 
-The dbt equivalent of Part 1's Explore — **19 dimensions × 25 metrics**, including ones that only make sense here: cost per model, min-billing waste, rows written, success rate, models built per run.
+The dbt equivalent of Part 1's Explore — **20 dimensions × 25 metrics**, including ones that only make sense here: cost per model, min-billing waste, rows written, success rate, models built per run. `Node Type` is among the dimensions, so any metric can be split model vs snapshot vs test.
 
 ### Attribution: three branches, ranked by confidence
 
@@ -191,6 +194,9 @@ cd "PowerBi/Bigquery & Dbt Cost Observability"   # quotes matter - the & is a sh
 | 📦 **Sample data** — the default, no cloud account | ☁️ **Your own BigQuery + dbt** |
 |---|---|
 | 1. Open `powerbi/BigQuery dbt Cost Observability.pbip`<br>2. Set **`p_SampleDataPath`** to this folder's `sample-data`<br>3. Refresh<br><br>`p_DataSource` already defaults to `SampleCSV`. | 1. Set **`p_DataSource`** to `BigQuery`<br>2. Fill in the parameters below<br>3. Refresh and authenticate<br><br>Want **Part 1 only**? Set `bq_project` and `p_Regions` and refresh — the dbt pages stay empty, nothing errors. |
+
+> [!IMPORTANT]
+> **Prerequisite for 🧱 Part 2:** this report expects `dbt_artifacts` to be installed and the job labels described below to already be in place. **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/Data-Engineering/tree/main/dbt%20Template%20for%20BigQuery%20Cost%20Observability%20PBI%20Report)** is a companion dbt project that wires both up out of the box — start there if your dbt project does not yet emit them.
 
 ### Parameters
 
@@ -241,7 +247,9 @@ Everything below is reference — read it when you need it.
 | **Never put a run id in `query_comment`** | BigQuery's result cache keys on exact query text, comments included. A per-run value there turns every repeated query into a cache miss — and the adapter already gives you the invocation id as a label. |
 | **Cost and layer do not fully overlap** | Cost comes from billing, `layer` from dbt metadata. Where a job has no matched node its layer is blank, which is why cost is grouped by target table and execution by layer, never both. Explore is the one place you can pair them, because there you have chosen to. |
 | **`dim_Date` ends today** | Generated from `#date(2026,1,1)` to `DateTime.LocalNow()`, so a job dated in the future falls outside it and drops out of every date-driven visual. The sample data is a completed month for exactly this reason. |
-| **Snapshots and seeds are not covered** | The model reads `dim_dbt__models` and the model and test execution tables. dbt snapshots and seeds live in their own `dbt_artifacts` tables, which this model does not read, so they never appear as nodes. Their BigQuery jobs still count toward dbt spend — they carry the invocation label like anything else dbt submits — but they can only ever reach run-level attribution. |
+| **Seeds are not covered** | The model reads `dim_dbt__models`, `dim_dbt__snapshots`, and the model, test and snapshot execution tables. dbt **seeds** live in their own `dbt_artifacts` table, which this model does not read, so they never appear as nodes. Their BigQuery jobs still count toward dbt spend — they carry the invocation label like anything else dbt submits — but they can only ever reach run-level attribution. |
+| **A snapshot's tags are synthesized** | `dim_dbt__snapshots` records no tags array, so each snapshot is given one `snapshot` tag report-side purely to keep it reachable from the tag slicer. Whatever tags it carries in its dbt config are **not** here, so do not reconcile snapshot tags against the project. Its `layer` is likewise stated as `snapshots`, not parsed from the path. |
+| **Snapshots report no rows written** | dbt records `rows_affected` as null on a snapshot even when its `MERGE` reports a row count in the message text, so snapshots are absent from **Rows Written** while still counted everywhere else. `bytes_processed` is null too — take a snapshot's bytes from the job, not from dbt. |
 | **`(root)` is a layer, not a bucket for oddities** | `layer` is segment 1 of the model's path, so a model whose `.sql` sits directly in `models/` has no segment to take and shows as `(root)`. It means exactly that and nothing else. |
 
 ### 🧪 The sample data
@@ -252,13 +260,14 @@ One synthetic month — **2026-06-01 to 2026-06-30** — generated by [`scripts/
 |---|---|---|---|
 | BigQuery jobs | **4,894** | Total spend | **$662.98** |
 | — top-level / script children | 4,135 / 759 | — dbt / everything else | $470.60 / $192.38 |
-| dbt invocations | 92 | models / distinct tests | 27 / 14 |
-| dbt node executions | 2,719 | failed / skipped nodes | 13 / 10 |
-| Regions | `eu`, `europe-west3` | Slot hours | 88.57 |
+| dbt invocations | 92 | models / snapshots / tests | 25 / 2 / 14 |
+| dbt node executions | 2,719 | — model / snapshot / test | 1,590 / 126 / 1,003 |
+| failed / skipped nodes | 13 / 10 | Slot hours | 88.57 |
+| Regions | `eu`, `europe-west3` | | |
 
 What is *not* random is the shape. A uniformly random dataset would hide the findings the report exists to surface, so the generator reproduces the structural facts deliberately: script children that bill, the 10 MB billing floor, cache hits that bill nothing, node coverage that is only partial, and rates that differ by region. Each is commented in the script with the reason.
 
-The generator also asserts the invariants the model's relationships depend on — unique non-blank `job_id`, no orphaned executions, every test reaching a model row — and exits non-zero if any break. Those are refresh-stopping errors rather than wrong numbers, so they are worth catching before Power BI sees them.
+The generator also asserts the invariants the model's relationships depend on — unique non-blank `job_id`, no orphaned executions, every node reaching a `dbt_models` row whatever its type, and each synthetic `no-job:` key matching the node type that produced it — and exits non-zero if any break. Those are refresh-stopping errors rather than wrong numbers, so they are worth catching before Power BI sees them.
 
 ```bash
 python scripts/generate_sample_data.py   # rewrites sample-data/            (stdlib only)
@@ -266,7 +275,7 @@ python scripts/build_assets.py           # rebuilds the SVGs from summary.json
 python scripts/build_page_assets.py      # crops captures, builds the tours  (Pillow + NumPy)
 ```
 
-The graphics on this page read their figures from `sample-data/summary.json`, written by the generator. Change the data and the diagrams follow; they cannot drift out of agreement.
+Every graphic that quotes a figure reads it from `sample-data/summary.json`, written by the generator — change the data and those graphics follow, so they cannot drift out of agreement. The dataflow diagram is the deliberate exception: it carries no figures at all, because its subject is the shape of the pipeline, and regenerating the sample month should not produce a diff in it.
 
 ### 📁 Repo layout
 
