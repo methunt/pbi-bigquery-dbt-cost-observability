@@ -1,0 +1,208 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "td20kpistrip",
+  "position": {
+    "x": 24,
+    "y": 132,
+    "z": 13000,
+    "height": 110,
+    "width": 1702,
+    "tabOrder": 13000
+  },
+  "visual": {
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Measure"
+                    }
+                  },
+                  "Property": "Failure KPI Strip HTML"
+                }
+              },
+              "queryRef": "Measure.Failure KPI Strip HTML",
+              "nativeQueryRef": "Failure KPI Strip HTML",
+              "displayName": "Failure KPI Strip HTML"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "contentFormatting": [
+        {
+          "properties": {
+            "showRawHtml": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "overrideInlineStyling": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "align": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            },
+            "userSelect": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "hyperlinks": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "noDataMessage": {
+              "expr": {
+                "Literal": {
+                  "Value": "''"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "stylesheet": [
+        {
+          "properties": {
+            "stylesheet": {
+              "expr": {
+                "Literal": {
+                  "Value": "'*{box-sizing:border-box;margin:0;padding:0}\nbody{overflow:hidden;background:transparent}\n.strip{display:flex;gap:14px;height:100%;align-items:stretch;\n  font-family:''Segoe UI Variable Display'',''Segoe UI'',system-ui,sans-serif}\n.c{flex:1 1 0;min-width:0;position:relative;overflow:hidden;background:#FFFFFF;\n  border:1px solid #E3E8EF;border-radius:14px;padding:11px 14px 13px;\n  box-shadow:0 3px 14px rgba(15,23,42,.06);\n  animation:rise .5s cubic-bezier(.22,.8,.28,1) backwards;\n  animation-delay:calc(var(--i) * 55ms);\n  transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease}\n.c:hover{box-shadow:0 8px 24px rgba(15,23,42,.11);transform:translateY(-2px);border-color:#CFD8E3}\n.k{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#5B6672;white-space:nowrap}\n.m{height:36px;margin-top:3px}\n.v{font-size:27px;line-height:36px;font-weight:600;letter-spacing:-.02em;color:#111827;white-space:nowrap}\n.v small{font-size:13px;font-weight:500;color:#5B6672;letter-spacing:0}\n.p{font-size:12px;color:#5B6672;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n.r{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--a);border-radius:0 3px 0 0;\n  animation:grow .75s cubic-bezier(.22,.8,.28,1) backwards;\n  animation-delay:calc(var(--i) * 55ms + 120ms)}\n.r::after{content:'''';position:absolute;inset:0;\n  background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);\n  animation:sheen 3.4s ease-in-out infinite;animation-delay:calc(var(--i) * 55ms + 1000ms)}\n/* Entrance animates transform and the accent width only - never opacity, and\n   never a mask over the value. Power BI restarts CSS animations every time the\n   page is shown, and animation-delay with fill-mode:backwards holds the FROM\n   state for the length of the delay, so anything faded or masked here would\n   leave the headline numbers invisible for ~400ms on every single visit. A\n   half-played translate still shows a fully readable card. */\n@keyframes rise{from{transform:translateY(9px)}}\n@keyframes grow{from{width:0}}\n@keyframes sheen{0%{transform:translateX(-100%)}60%,100%{transform:translateX(100%)}}\n@media (prefers-reduced-motion:reduce){\n  .c,.r{animation:none!important}\n  .r::after{display:none}\n}'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "crossFilter": [
+        {
+          "properties": {
+            "enabled": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "top": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "left": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "4eb79ee83ac2b56a2a5b",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Measure"
+              }
+            },
+            "Property": "Failure KPI Strip HTML"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

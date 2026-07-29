@@ -1,0 +1,111 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.1.0/schema.json",
+  "displayName": "Explore · clear slicers",
+  "name": "bmExpClearSlicers",
+  "options": {
+    "applyOnlyToTargetVisuals": true,
+    "targetVisualNames": [
+      "qx80fdate",
+      "qx81fuser",
+      "qx82fstatement",
+      "qx83fregion",
+      "qx84fcache",
+      "qx86fbie"
+    ],
+    "suppressActiveSection": true
+  },
+  "explorationState": {
+    "version": "1.0",
+    "activeSection": "a1c47f9b2e6d0835b1f7",
+    "sections": {
+      "a1c47f9b2e6d0835b1f7": {
+        "visualContainers": {
+          "qx80fdate": {
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "qx81fuser": {
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "qx82fstatement": {
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "qx83fregion": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "qx84fcache": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "qx86fbie": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

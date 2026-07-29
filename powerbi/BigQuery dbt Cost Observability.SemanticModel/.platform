@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "BigQuery dbt Cost Observability"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "f087e7d2-4046-46b8-9eae-762312931055"
+  }
+}

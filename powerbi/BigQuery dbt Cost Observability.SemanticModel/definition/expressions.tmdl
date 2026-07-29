@@ -1,0 +1,139 @@
+expression Source_BQ =
+		let
+		    Source = GoogleBigQuery.Database([ UseStorageApi = false, BillingProject= bq_project])
+		in
+		    Source
+	lineageTag: 1856dda6-37cf-4b70-ae1d-4aeff73cd6c8
+	queryGroup: Measure
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+
+expression RangeStart = #datetime(2026, 1, 1, 0, 0, 0) meta [IsParameterQuery=true, Type="DateTime", IsParameterQueryRequired=true]
+	lineageTag: be63b313-0ca0-401b-80f2-3c61087ec5ab
+	queryGroup: Parameter
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = DateTime
+
+expression RangeEnd = #datetime(2026, 8, 1, 0, 0, 0) meta [IsParameterQuery=true, Type="DateTime", IsParameterQueryRequired=true]
+	lineageTag: a0851526-aee9-49fb-bbe7-96d9f9250606
+	queryGroup: Parameter
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = DateTime
+
+/// BQ Job Details Fact Table
+expression fx_GetJobdetails =
+		(region as text, sqlTemplate as text) =>
+		let
+		    // Build table reference dynamically
+		    tableName = "`region-" & region & "`.INFORMATION_SCHEMA.JOBS_BY_PROJECT",
+		
+		    // Replace placeholder in SQL
+		    finalSql = Text.Replace(sqlTemplate, "__TABLE__", tableName),
+		    finalSql2 = Text.Replace(finalSql, "__REGION__", region),
+		
+		    Result =
+		        Value.NativeQuery(
+		            Source_BQ{[Name = "acme-analytics-prod", Kind = "Database"]}[Data],
+		            finalSql2,
+		            null,
+		            [EnableFolding = true]
+		        )
+		in
+		    Result
+	lineageTag: e0e83881-5ba3-4a36-9ed7-99d0b140aec0
+	queryGroup: Measure
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Function
+
+expression bq_project = "acme-analytics-prod" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: b405a8cb-de04-4cb4-bd3d-9e57c9dbe56d
+	queryGroup: Parameter
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+/// Comma-separated BigQuery regions to read INFORMATION_SCHEMA.JOBS_BY_PROJECT from, e.g. 'eu,europe-west3'. Jobs only appear in the region they ran in, so list every region the project uses or that spend is invisible. A region with no access is skipped silently rather than failing the refresh.
+expression p_Regions = "eu,europe-west3" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 97b71728-1b83-4958-a579-510c615ecba4
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
+
+/// GCP project holding the dbt_artifacts metadata tables.
+expression p_DbtMeta_Project = "acme-analytics-prod" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 1d2338cb-4796-4116-896f-7b13a84bee78
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
+
+	annotation PBI_NavigationStepName = Navigation
+
+/// Dataset holding the dbt_artifacts metadata tables. Usually the dbt target dataset, since the package writes to wherever the run's target points; change this single value if the metadata is relocated to a dedicated dataset.
+expression p_DbtMeta_Dataset = "analytics" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 59f4cfac-d437-4178-83cf-6f57068ec8db
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
+
+/// Table-name prefix for the dbt_artifacts tables. Set this to match how the package's models are aliased in the target project - an empty string if they carry their default names.
+expression p_DbtMeta_Prefix = "dbtmeta_" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 63f90a76-efb8-4029-9392-0d4df558f09b
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
+
+/// Which source every table reads. "SampleCSV" reads the committed synthetic CSVs in sample-data/, so the report opens and refreshes with no Google Cloud access at all. "BigQuery" reads INFORMATION_SCHEMA.JOBS_BY_PROJECT and the dbt_artifacts tables live. Every fact and dbt table honours this one value, so a single change switches the whole model.
+expression p_DataSource = "SampleCSV" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 8f1c4d20-6ba7-4e93-9d51-3c07a5e21b44
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
+
+/// Folder holding the sample CSVs. Used only when p_DataSource is "SampleCSV" - point it at the sample-data folder of your clone. A trailing slash or backslash is optional.
+expression p_SampleDataPath = "D:\Git\PowerBi\Bigquery & Dbt Cost Observability\sample-data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 2a7e93b5-0c48-4f61-8ad2-71b9e6c0538f
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
+
+/// Reads one sample CSV and applies the column types the model expects. Types are passed in per table rather than inferred, because CSV carries none: an inferred load hands every column back as text, which silently breaks the relationships and every numeric measure. Kept as one shared function so the CSV mechanics live in a single place and each partition only states its own type list.
+expression fn_ReadSampleCsv =
+		let
+		    ReadCsv = (fileName as text, columnTypes as list) as table =>
+		        let
+		            _base =
+		                if Text.EndsWith(p_SampleDataPath, "\") or Text.EndsWith(p_SampleDataPath, "/")
+		                then p_SampleDataPath
+		                else p_SampleDataPath & "\",
+		            Source = Csv.Document(
+		                File.Contents(_base & fileName),
+		                [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+		            ),
+		            Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+		            // An empty CSV field reads as an empty string, but BigQuery returns
+		            // NULL - and the two are not interchangeable in DAX. ISBLANK("") is
+		            // FALSE, so measures written as ISBLANK(Fact[parent_job_id]) match no
+		            // rows at all and silently return blank. Normalise to null first so the
+		            // CSV path carries the same semantics as the BigQuery path.
+		            Nulled = Table.ReplaceValue(
+		                Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)
+		            ),
+		            Typed = Table.TransformColumnTypes(Nulled, columnTypes)
+		        in
+		            Typed
+		in
+		    ReadCsv
+	lineageTag: c5b81f47-92d3-4a06-b7e8-1d64f0a93c2e
+	queryGroup: Measure
+
+	annotation PBI_ResultType = Function
+

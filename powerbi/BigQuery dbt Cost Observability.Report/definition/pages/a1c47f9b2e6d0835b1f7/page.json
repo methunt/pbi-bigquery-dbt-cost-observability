@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "a1c47f9b2e6d0835b1f7",
+  "displayName": "Query & Usage Insights · Explore",
+  "displayOption": "FitToWidth",
+  "height": 1420,
+  "width": 1750,
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "ce593e79d7e0a9ba7c59",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Fact"
+              }
+            },
+            "Property": "user_email"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User",
+        "isHiddenInViewMode": true
+      }
+    ]
+  },
+  "visibility": "HiddenInViewMode"
+}

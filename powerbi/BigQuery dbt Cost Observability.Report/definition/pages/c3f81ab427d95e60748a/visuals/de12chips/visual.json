@@ -1,0 +1,190 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "de12chips",
+  "position": {
+    "x": 820,
+    "y": 84,
+    "z": 10000,
+    "height": 36,
+    "width": 560,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Measure"
+                    }
+                  },
+                  "Property": "Filter Chips HTML"
+                }
+              },
+              "queryRef": "Measure.Filter Chips HTML",
+              "nativeQueryRef": "Filter Chips HTML",
+              "displayName": "Filter Chips HTML"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "contentFormatting": [
+        {
+          "properties": {
+            "showRawHtml": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "overrideInlineStyling": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "align": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            },
+            "userSelect": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "hyperlinks": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "noDataMessage": {
+              "expr": {
+                "Literal": {
+                  "Value": "''"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "stylesheet": [
+        {
+          "properties": {
+            "stylesheet": {
+              "expr": {
+                "Literal": {
+                  "Value": "'*{box-sizing:border-box;margin:0;padding:0}\nbody{overflow:hidden;background:transparent}\n.chips{display:flex;align-items:center;gap:7px;height:100%;flex-wrap:nowrap;overflow:hidden;\n  font-family:''Segoe UI'',system-ui,sans-serif}\n.chip{display:inline-flex;align-items:baseline;gap:5px;flex:0 0 auto;max-width:270px;\n  padding:5px 11px;border-radius:999px;background:#EFF6FF;border:1px solid #BFDBFE;\n  font-size:10.5px;color:#1E40AF;white-space:nowrap;overflow:hidden;\n  animation:pop .3s cubic-bezier(.2,.9,.3,1) backwards;\n  transition:background .18s ease,border-color .18s ease}\n.chip:nth-child(1){animation-delay:20ms}\n.chip:nth-child(2){animation-delay:80ms}\n.chip:nth-child(3){animation-delay:140ms}\n.chip:hover{background:#DBEAFE;border-color:#93C5FD}\n.chip b{font-weight:600;letter-spacing:.02em}\n.chip em{font-style:normal;color:#3B6BC4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.chip.more{background:#F1F5F9;border-color:#E2E8F0;color:#5B6672}\n.chip.none{background:#F6F8FA;border-color:#E3E8EF;color:#8A94A2}\n@keyframes pop{from{transform:translateY(5px) scale(.96)}}\n@media (prefers-reduced-motion:reduce){.chip{animation:none}}'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "crossFilter": [
+        {
+          "properties": {
+            "enabled": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "top": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "left": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

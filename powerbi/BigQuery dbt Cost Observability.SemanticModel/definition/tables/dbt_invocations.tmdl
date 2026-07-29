@@ -1,0 +1,128 @@
+/// One row per dbt run, from dbt_artifacts. project_name is the authoritative discriminator when several dbt projects share one metadata dataset.
+table dbt_invocations
+	lineageTag: 2b8b6498-6a8b-427b-9089-ffa992a6482c
+
+	/// Unique id of the dbt run. Equals the invocation_id job label on every BigQuery job the run fired.
+	column command_invocation_id
+		dataType: string
+		lineageTag: 38377c6d-7b3b-450c-8abb-81adf612fa4b
+		summarizeBy: none
+		sourceColumn: command_invocation_id
+
+	/// dbt version that produced the run.
+	column dbt_version
+		dataType: string
+		lineageTag: cf242dbf-53cc-40be-ac0d-d8d5ab7b4b9f
+		summarizeBy: none
+		sourceColumn: dbt_version
+
+	/// dbt project name from dbt_project.yml. The discriminator when multiple dbt projects share one metadata dataset.
+	column project_name
+		dataType: string
+		lineageTag: a738b568-c31d-4125-972d-18e5a600157f
+		summarizeBy: none
+		sourceColumn: project_name
+
+	/// Timestamp the run started.
+	column run_started_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 74ea3514-6980-4497-8d31-fc63cc93fe25
+		summarizeBy: none
+		sourceColumn: run_started_at
+
+	/// Run start date, for the relationship to dim_Date.
+	column run_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 5c3fc3f3-f76b-48ad-bcda-fbc87a176d78
+		summarizeBy: none
+		sourceColumn: run_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// The dbt command invoked, e.g. build, run, test.
+	column dbt_command
+		dataType: string
+		lineageTag: 45685b1d-1e17-4825-8e80-e9be64af73d3
+		summarizeBy: none
+		sourceColumn: dbt_command
+
+	/// TRUE when the run was invoked with --full-refresh.
+	column full_refresh_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: e2e7be8d-2937-49fb-9f9b-10b5093b142c
+		summarizeBy: none
+		sourceColumn: full_refresh_flag
+
+	/// dbt target the run used, e.g. dev or uat.
+	column target_name
+		dataType: string
+		lineageTag: 6ca81162-a3ba-4981-90f9-1afa518e0a93
+		summarizeBy: none
+		sourceColumn: target_name
+
+	/// Default dataset the run wrote to.
+	column target_schema
+		dataType: string
+		lineageTag: 2724e50e-ab75-46d6-a67a-b6d52f6f3b13
+		summarizeBy: none
+		sourceColumn: target_schema
+
+	/// Thread count the run used. Denominator for Thread Efficiency %.
+	column target_threads
+		dataType: int64
+		formatString: 0
+		lineageTag: 03eb93c1-a559-45f5-af6b-baf98fefcaba
+		summarizeBy: none
+		sourceColumn: target_threads
+
+		annotation SummarizationSetBy = Automatic
+
+	/// JSON of the dbt vars captured for the run, when the metadata package is configured to record them. Lets a written table be tied back to the variable values that produced it.
+	column dbt_vars
+		dataType: string
+		lineageTag: d5500575-7663-4f31-b1d2-f44345f64bc6
+		summarizeBy: none
+		sourceColumn: dbt_vars
+
+	/// JSON of the environment variables captured for the run, when the metadata package is configured to record them.
+	column env_vars
+		dataType: string
+		lineageTag: 7fc5328a-b5f3-4711-9778-79557c065796
+		summarizeBy: none
+		sourceColumn: env_vars
+
+	/// First 8 characters of command_invocation_id — enough to tell two runs apart at a glance without a 36-character GUID eating a third of a table. Verified unique across the invocations present; if a future collision ever appeared, two runs would merge into one row wherever this is used as a grouping column, so widen the prefix rather than adding a tiebreaker. The full id stays on command_invocation_id for joining to BigQuery job labels.
+	column invocation_short = LEFT ( 'dbt_invocations'[command_invocation_id], 8 )
+		dataType: string
+		displayFolder: Identity
+		lineageTag: fd341d2e-b01a-44a0-a21f-8ed536d47e53
+		summarizeBy: none
+
+	partition dbt_invocations = m
+		mode: import
+		queryGroup: Dim
+		source =
+				let
+				    _sql =
+				        "SELECT command_invocation_id, dbt_version, project_name, run_started_at," &
+				        " DATE(run_started_at) AS run_date, dbt_command, full_refresh_flag," &
+				        " target_name, target_schema, target_threads," &
+				        " TO_JSON_STRING(dbt_vars) AS dbt_vars, TO_JSON_STRING(env_vars) AS env_vars" &
+				        " FROM `" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix & "fct_dbt__invocations`",
+				    _bq = () => Value.NativeQuery(Source_BQ{[Name = bq_project, Kind = "Database"]}[Data], _sql, null, [EnableFolding = true]),
+				    _csv = () => fn_ReadSampleCsv("dbt_invocations.csv", {
+				            {"command_invocation_id", type text}, {"dbt_command", type text}, {"dbt_vars", type text}, {"dbt_version", type text},
+				            {"env_vars", type text}, {"full_refresh_flag", type logical}, {"project_name", type text}, {"run_date", type date},
+				            {"run_started_at", type datetime}, {"target_name", type text}, {"target_schema", type text}, {"target_threads", Int64.Type}
+				    }),
+				    Source = if p_DataSource = "SampleCSV" then _csv() else _bq()
+				in
+				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "b7e4c1a09d3f28516ca4",
+  "displayName": "DBT Jobs",
+  "displayOption": "FitToWidth",
+  "height": 1420,
+  "width": 1750,
+  "visualInteractions": [
+    {
+      "source": "048582c29eb5be4adb98",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "18ff0aa669cf1f374835",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "290a040a89489d5e51c7",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "29fb2ecf5a11c9267404",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "2b3474e4b235592e8c05",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "32e88b8e6c00b9f798e8",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "3b0c4f780fb78db67157",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "58eb224b551b548e60b5",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "5be294b8b2fabe22344a",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "9a969d15efd5484b4956",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "a21ece12a094cd156676",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "c097af1f8d6a9f4e5c4f",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "dc3bc0cc96bb987bbe30",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    },
+    {
+      "source": "e245b67dd037715755ee",
+      "target": "dfc701677b2846b78f85",
+      "type": "NoFilter"
+    }
+  ]
+}

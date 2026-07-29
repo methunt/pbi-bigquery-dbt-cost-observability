@@ -1,0 +1,44 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmarksMetadata/1.0.0/schema.json",
+  "items": [
+    {
+      "name": "bmDrawerOpen"
+    },
+    {
+      "name": "bmDrawerClose"
+    },
+    {
+      "name": "bmQryDrawerOpen"
+    },
+    {
+      "name": "bmQryDrawerClose"
+    },
+    {
+      "name": "bmExpDrawerOpen"
+    },
+    {
+      "name": "bmExpDrawerClose"
+    },
+    {
+      "name": "bmExpClearSlicers"
+    },
+    {
+      "name": "bmDbtExpDrawerOpen"
+    },
+    {
+      "name": "bmDbtExpDrawerClose"
+    },
+    {
+      "name": "bmDbtExpClearSlicers"
+    },
+    {
+      "name": "bmDbtTdDrawerOpen"
+    },
+    {
+      "name": "bmDbtTdDrawerClose"
+    },
+    {
+      "name": "bmDbtTdClearSlicers"
+    }
+  ]
+}

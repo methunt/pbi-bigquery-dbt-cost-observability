@@ -1,0 +1,35 @@
+/// Bridge of dbt tags at node grain, from the latest definition of each model. Use for filtering only: a model can carry several tags, so any total broken out by tag double counts. Use dbt_models[layer] for additive breakdowns.
+table dbt_model_tags
+	lineageTag: c0b2a021-08d7-412e-ba42-aabc88d01ed1
+
+	/// dbt unique node id. Join key to dbt_models.
+	column node_id
+		dataType: string
+		lineageTag: 84c401b1-44a9-47bd-8502-658d516048d8
+		summarizeBy: none
+		sourceColumn: node_id
+
+	/// One dbt tag carried by the model.
+	column tag
+		dataType: string
+		lineageTag: 8e254ab5-ee65-4252-bf75-b4cff8d78da6
+		summarizeBy: none
+		sourceColumn: tag
+
+	partition dbt_model_tags = m
+		mode: import
+		queryGroup: Dim
+		source =
+				let
+				    _sql =
+				        "WITH latest AS (SELECT node_id, tags FROM `" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix & "dim_dbt__models`" &
+				        " QUALIFY ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY run_started_at DESC) = 1)" &
+				        " SELECT node_id, tag FROM latest, UNNEST(tags) AS tag",
+				    _bq = () => Value.NativeQuery(Source_BQ{[Name = bq_project, Kind = "Database"]}[Data], _sql, null, [EnableFolding = true]),
+				    _csv = () => fn_ReadSampleCsv("dbt_model_tags.csv", {
+				            {"node_id", type text}, {"tag", type text}
+				    }),
+				    Source = if p_DataSource = "SampleCSV" then _csv() else _bq()
+				in
+				    Source
+

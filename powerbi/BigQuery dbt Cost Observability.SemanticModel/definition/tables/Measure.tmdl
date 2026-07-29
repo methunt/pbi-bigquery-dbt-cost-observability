@@ -1,0 +1,2286 @@
+table Measure
+	excludeFromModelRefresh
+	lineageTag: 268f8411-7e20-4b9d-879b-385ee4ad520c
+
+	/// Total number of queries executed
+	measure 'Total Queries' = COUNT(fact[job_id])
+		formatString: #,0
+		displayFolder: Query Volume
+		lineageTag: be28f56d-a35c-402f-943e-bf08b8adfcf6
+
+	/// Total number of unique users running queries
+	measure 'Total Users' = DISTINCTCOUNT('Fact'[user_email])
+		formatString: 0
+		displayFolder: User Activity
+		lineageTag: 131c974c-202b-4c7b-8200-78170843ff94
+
+	/// Average duration of queries in seconds
+	measure 'Average Query Duration (sec)' = AVERAGE(fact[duration_sec])
+		formatString: 0.00
+		displayFolder: Query Performance
+		lineageTag: 9dbe7f21-39f5-4fa8-a7c5-e1b2ae43122e
+
+	/// Queries with slow performance (>10 seconds)
+	measure 'Slow Queries (>15s)' = CALCULATE([Total Queries], fact[duration_sec] > 15)
+		formatString: 0
+		displayFolder: Query Performance
+		lineageTag: 4a20b472-b629-4ae2-aa70-c34b868a6c68
+
+	/// Percentage of slow queries
+	measure 'Slow Query Rate %' = DIVIDE([Slow Queries (>15s)], [Total Queries])
+		formatString: 0%;-0%;0%
+		displayFolder: Query Performance
+		lineageTag: 58b809c7-e872-47b1-8359-415809e8d63b
+
+	/// Number of queries that hit the cache
+	measure 'Cache Hit Count' = CALCULATE([Total Queries], KEEPFILTERS(fact[cache_hit] = TRUE()))
+		formatString: 0
+		displayFolder: Cache Analysis
+		lineageTag: 7aa0b226-4a57-4536-87b1-471faa779719
+
+	/// Percentage of queries hitting cache
+	measure 'Cache Hit Rate %' = DIVIDE([Cache Hit Count], [Total Queries], 0)
+		formatString: 0%;-0%;0%
+		displayFolder: Cache Analysis
+		lineageTag: a9a67b59-7ab2-4c44-ac8d-a2041fb351a3
+
+	/// Average duration of cache hit queries
+	measure 'Avg Duration - Cache Hit (sec)' = CALCULATE(AVERAGE(fact[duration_sec]), fact[cache_hit] = TRUE())
+		formatString: 0.00
+		displayFolder: Cache Analysis
+		lineageTag: f9e106be-5b25-43bd-97fc-9118bfc40ea1
+
+	/// Average duration of cache miss queries
+	measure 'Avg Duration - Cache Miss (sec)' = CALCULATE(AVERAGE(fact[duration_sec]), fact[cache_hit] = FALSE())
+		formatString: 0.00
+		displayFolder: Cache Analysis
+		lineageTag: d9de9fd0-2f41-4215-87bf-dc9681043bec
+
+	/// Performance gain from cache in seconds
+	measure 'Cache Time Savings (sec)' = [Avg Duration - Cache Miss (sec)] - [Avg Duration - Cache Hit (sec)]
+		formatString: 0.00"s"
+		displayFolder: Cache Analysis
+		lineageTag: 361a66ed-5a3b-461c-b680-fbce705e086d
+
+	/// Number of queries accelerated by BI Engine
+	measure 'BI Engine Accelerated Count' = ```
+			
+			CALCULATE(
+			    [Total Queries], 
+			    KEEPFILTERS( 'Fact'[bie_mode] in { "FULL" })
+			)
+			```
+		formatString: 0
+		displayFolder: BI Engine
+		lineageTag: 5b786527-9d12-4fe6-926d-6a6b6a198aee
+
+	/// Percentage of queries accelerated by BI Engine
+	measure 'BI Engine Acceleration Rate %' = ```
+			DIVIDE([BI Engine Accelerated Count], [Total Queries], 0) 
+			```
+		formatString: 0%;-0%;0%
+		displayFolder: BI Engine
+		lineageTag: 09929be9-5be9-4673-a649-8ab41452fc7a
+
+	/// BI Engine acceleration efficiency
+	measure 'Avg Duration - BI Engine (sec)' =
+			
+			CALCULATE(
+			    AVERAGE( 'Fact'[duration_sec] ),
+			    KEEPFILTERS( Fact[bie_mode] in { "FULL"}
+			)
+			)
+		displayFolder: BI Engine
+		lineageTag: b924acda-e2d2-4f8f-8440-a1db05040468
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Average duration for non-BI Engine queries
+	measure 'Avg Duration - No BI Engine (sec)' = CALCULATE(AVERAGE(fact[duration_sec]), 'Fact'[bie_mode] <> "FULL")
+		displayFolder: BI Engine
+		lineageTag: d827f5b0-a16a-4ea3-93e9-b4528ce2ac1f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Average number of queries per user
+	measure Queries/User = DIVIDE([Total Queries], [Total Users], 0)
+		formatString: #,##0.00
+		displayFolder: User Activity
+		lineageTag: a5ea4d1e-6961-41ca-9ffe-fea83c4ebc41
+
+	/// Maximum number of queries by a single user
+	measure 'Most Active User' =
+			
+			var _a = TOPN(1, VALUES('Fact'[user_email]), [Total Queries],DESC)
+			var _b = MAXX(_a, 'Fact'[user_email])
+			RETURN
+			_b
+		formatString: #,##0
+		displayFolder: User Activity
+		lineageTag: d3bec13b-c630-4e10-b2b5-f9f282a1600c
+
+	/// Unique query patterns
+	measure 'Unique Query Count' = DISTINCTCOUNT('Fact'[queryhash])
+		formatString: 0
+		displayFolder: Query Analysis
+		lineageTag: aa266de0-7701-42ff-9c8f-885ef050c429
+
+	/// Jobs that were actually charged for - those with billed bytes above zero. Excludes cache hits and metadata-only jobs, which run for free.
+	measure 'Total Billed Queries' = ```
+			
+			CALCULATE(
+			    [Total Queries],
+			    KEEPFILTERS('Fact'[total_bytes_billed] > 0)
+			)
+			
+			```
+		formatString: 0
+		displayFolder: Cost Analyses
+		lineageTag: 8b409ccb-68d7-4f6f-b396-eaecb706c7f4
+
+	/// Share of jobs that were charged for. A low rate is usually a healthy sign: it means caching and BI Engine are absorbing much of the load.
+	measure 'Total Billed Queries Rate %' = DIVIDE([Total Billed Queries], [Total Queries],0)
+		formatString: 0%;-0%;0%
+		displayFolder: Cost Analyses
+		lineageTag: 50b13a14-5946-4368-a562-cb91d7fc92e5
+
+	/// Billed bytes across top-level jobs only. Child statements of a multi-statement SCRIPT are excluded (parent_job_id IS BLANK): the parent job reports the exact sum of its children's billed bytes and Fact holds both rows, so including children would double count. Verified: parent billed = sum of child billed, to the byte.
+	measure 'Billed bytes' =
+			CALCULATE (
+			    SUM ( 'Fact'[total_bytes_billed] ),
+			    KEEPFILTERS ( 'Fact'[total_bytes_billed] > 0 ),
+			    KEEPFILTERS ( 'Fact'[parent_job_id] = BLANK () )
+			)
+		formatString: #,0
+		displayFolder: Cost Analyses
+		lineageTag: 3fa3a989-0697-48b1-8274-7b7946902da5
+
+	/// On-demand query cost in USD. Rate comes from dim_Region_Cost per Fact[region], falling back to the is_default row. Counts top-level jobs only - child statements of a SCRIPT are excluded because the parent already carries their bytes, and counting both double counts.
+	measure 'Billed Amount $' =
+			VAR DefaultRate =
+			    CALCULATE (
+			        MAX ( 'dim_Region_Cost'[usd_per_tib] ),
+			        REMOVEFILTERS ( 'dim_Region_Cost' ),
+			        'dim_Region_Cost'[is_default] = TRUE ()
+			    )
+			RETURN
+			    SUMX (
+			        FILTER ( 'Fact', ISBLANK ( 'Fact'[parent_job_id] ) ),
+			        DIVIDE ( 'Fact'[total_bytes_billed], POWER ( 2, 40 ) )
+			            * COALESCE ( RELATED ( 'dim_Region_Cost'[usd_per_tib] ), DefaultRate )
+			    )
+		formatString: \$#,0.00
+		displayFolder: Cost Analyses
+		lineageTag: 085e6128-0313-4989-ac2f-55e67876865e
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Charged jobs per distinct user. Separates a handful of heavy users from broad adoption when reading total volume.
+	measure 'Billed Queries/User' = DIVIDE([Total Billed Queries], [Total Users],0)
+		displayFolder: User Activity
+		lineageTag: 831c3da1-51a3-4500-a3a4-7631afd0fb5f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Average cost per distinct user, for spotting outlier consumers.
+	measure 'Billed Amount/User' = DIVIDE([Billed Amount $], [Total Users])
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		displayFolder: Cost Analyses
+		lineageTag: 597860fc-b9bd-4384-b2ab-946653a25f13
+
+	/// Jobs that errored. Failures still bill for whatever they scanned before dying, so a high count is both a reliability and a cost problem.
+	measure 'Failed Queries' = CALCULATE([Total Queries], KEEPFILTERS('Fact'[statement_type] = "FAILED"))
+		formatString: 0
+		displayFolder: Query Analysis
+		lineageTag: a4c40614-a4ea-4aa0-9ecd-d9a96387e94f
+
+	/// Billed bytes expressed in TiB, the unit on-demand pricing is quoted in. Top-level jobs only, matching the cost measures.
+	measure 'Billed TiB' = DIVIDE([Billed bytes], POWER(1024,4))
+		formatString: #,0.0000
+		displayFolder: Cost Analyses
+		lineageTag: 0d1e2a85-bae2-4fd0-aa93-349bae2e6bd1
+
+	/// Timestamp of the last model refresh, for the data-as-of caption.
+	measure LastRefreshed = MAX(_LastRefreshed[LastRefreshed])
+		formatString: General Date
+		isHidden
+		displayFolder: Other
+		lineageTag: 0a024d23-706f-4c40-83f2-575a61c99c55
+
+		changedProperty = IsHidden
+
+	/// Model executions that actually ran - success or error, excluding skipped, because a skipped node never reached the warehouse. Models only despite the name: the node-executions table now carries tests as well, and this measure keeps its original models-only meaning. Renaming it to Models Run, and freeing Node Executions to mean every node type, is still an open decision.
+	measure 'dbt Node Executions' =
+			-- node_type is now load-bearing: dbt_node_executions holds test rows too, so
+			-- without this filter the count silently includes tests and nothing errors.
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status] <> "skipped" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Execution
+		lineageTag: f54caad2-ccf3-4885-885a-03422da3e958
+
+	/// Distinct dbt runs recorded by dbt_artifacts, counting runs of any command. Test-only invocations are now included - they were invisible while this counted model executions only, which understated the denominator of Cost per Invocation.
+	measure 'dbt Invocations' =
+			-- Deliberately NOT filtered to node_type = Model. A test-only invocation records no
+			-- model rows, so while this counted the old model-executions table it could not see
+			-- such a run at all. The unified table can, and a test-only run is still a run that
+			-- cost money - 46 test executions carry a real BigQuery job id.
+			CALCULATE (
+			    DISTINCTCOUNT ( 'dbt_node_executions'[command_invocation_id] ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Execution
+		lineageTag: 305320c8-340a-4cc1-8ea0-7623aa0bb6e7
+
+	/// Distinct models that built successfully. Counts distinct nodes rather than rows so a model rebuilt several times in the window counts once. Skipped and errored nodes are excluded - a skipped node wrote nothing.
+	measure 'dbt Models Built' =
+			CALCULATE (
+			    DISTINCTCOUNT ( 'dbt_node_executions'[node_id] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status] = "success" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Execution
+		lineageTag: 9976ca09-d0f8-44d3-b3e6-74a19573c937
+
+	/// Model executions that ended in error. Failed builds still cost money on whatever they scanned before failing. Models only - see Tests Failed for the test side, and Nodes Needing Attention for everything that did not come out clean.
+	measure 'dbt Failed Nodes' =
+			-- Models only, and status = error rather than status_group = Failed, so this keeps
+			-- meaning exactly what it meant before the union: a MODEL that errored. Failing
+			-- tests are counted by Tests Failed.
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status] = "error" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Execution
+		lineageTag: a263b275-3f1d-481a-969b-dfc0d7308405
+
+	/// Share of attempted model executions with status = success. The denominator deliberately counts every model row dbt recorded, including skipped nodes, so a failure that skips its downstream dependants is reflected in full. Ignores any filter on the outcome columns so the ratio cannot be narrowed by its own dimension - grouping the Explore grid by Node Status used to make every row read 100%. Models only; see Run Health % for models and tests together, and Test Pass Rate % for tests alone.
+	measure 'dbt Success Rate %' =
+			-- Both halves ignore any filter on the outcome columns, for the same reason as
+			-- Run Health %. Without it the ratio is self-fulfilling: Node Status is offered as
+			-- a dimension in the Explore grid and Run outcome is a slicer on both dbt pages, so
+			-- selecting OK - or simply grouping a grid by Node Status - narrowed numerator and
+			-- denominator together and every row read a flattering 100%. The measure described
+			-- the selection rather than the run.
+			--
+			-- Date, invocation, layer, schema and command filters all still apply: this removes
+			-- three named columns, not the whole filter context. ALLSELECTED() would be wrong
+			-- here - it drops the invocation filter too, so a per-run grid would divide each
+			-- run's successes by every row in the selection (3 of 269 rather than 3 of 15).
+			VAR Ok =
+			    CALCULATE (
+			        COUNTROWS ( 'dbt_node_executions' ),
+			        KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			        'dbt_node_executions'[status] = "success",
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+			VAR Attempted =
+			    CALCULATE (
+			        COUNTROWS ( 'dbt_node_executions' ),
+			        KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+			RETURN
+			    -- 0% when models were attempted but none succeeded; blank only when this
+			    -- selection attempted no models at all, so a test-only run reads as no data
+			    -- rather than as a total failure.
+			    IF ( NOT ISBLANK ( Attempted ), DIVIDE ( COALESCE ( Ok, 0 ), Attempted ) )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: dbt\Execution
+		lineageTag: c9483af2-1009-4da1-9b39-2bbc1795e427
+
+	/// Sum of model wall-clock time in minutes. Includes time spent in self-executing post-hooks, whose billed BYTES the run metadata does not capture - only the job history does. Models only: test runtime is in the same table now but is excluded here to keep the figure comparable with earlier reporting.
+	measure 'dbt Total Runtime (min)' =
+			-- Models only, preserving the pre-union meaning. The unified table also carries test
+			-- runtime, so dropping the node_type filter would silently fold test time into this.
+			CALCULATE (
+			    DIVIDE ( SUM ( 'dbt_node_executions'[total_node_runtime] ), 60 ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0.0
+		displayFolder: dbt\Execution
+		lineageTag: 75a39cb2-4ca4-44d2-b5da-7c95fa6fe9c3
+
+	/// Mean wall-clock seconds per model execution, over models that actually ran. Skipped nodes are excluded because they report zero runtime rather than null, which would otherwise pull the average toward zero in exact proportion to how badly the run failed.
+	measure 'dbt Avg Model Runtime (s)' =
+			-- Two exclusions, both load-bearing. node_type keeps test runtime out of a
+			-- model average. The skipped filter matters because dbt records
+			-- total_node_runtime = 0 (not null) on a skipped node, so AVERAGE counts those
+			-- zeros and drags the mean down - on the 28 Jul 13:30 run that was 0.87s
+			-- reported against a true 11.33s.
+			CALCULATE (
+			    AVERAGE ( 'dbt_node_executions'[total_node_runtime] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status] <> "skipped" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0.00
+		displayFolder: dbt\Execution
+		lineageTag: 99ef69d9-33ae-4b72-9045-9c2b108d1a83
+
+	/// Slowest single model execution in the current context. No skipped filter is needed - a skipped node reports zero runtime and so can never be the maximum.
+	measure 'dbt Longest Model (s)' =
+			CALCULATE (
+			    MAX ( 'dbt_node_executions'[total_node_runtime] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0.00
+		displayFolder: dbt\Execution
+		lineageTag: ccf4e8a4-6958-449f-8917-a992e549a283
+
+	/// Model runtime as a share of the thread-seconds the run had available: summed node runtime over elapsed window times target_threads. Below 100% means threads sat idle waiting on the DAG. Skipped nodes are excluded from both halves - they consume no thread time, and including them shrank the elapsed window as well as the numerator.
+	measure 'Thread Efficiency %' =
+			CALCULATE (
+			    VAR Runtime = SUM ( 'dbt_node_executions'[total_node_runtime] )
+			    VAR Capacity =
+			        SUMX (
+			            VALUES ( 'dbt_node_executions'[command_invocation_id] ),
+			            VAR StartAt = CALCULATE ( MIN ( 'dbt_node_executions'[compile_started_at] ) )
+			            VAR EndAt = CALCULATE ( MAX ( 'dbt_node_executions'[query_completed_at] ) )
+			            VAR Threads = CALCULATE ( MAX ( 'dbt_invocations'[target_threads] ) )
+			            RETURN DATEDIFF ( StartAt, EndAt, SECOND ) * Threads
+			        )
+			    RETURN DIVIDE ( Runtime, Capacity ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status] <> "skipped" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: dbt\Execution
+		lineageTag: b2aa75fa-28e6-47a8-9f6c-e2676011660e
+
+	/// On-demand cost of every BigQuery job dbt submitted, scoped by is_dbt_job. This is the complete dbt bill: it includes the post-hook and run-operation jobs that dbt's own run metadata never records.
+	measure 'dbt Billed $' =
+			CALCULATE (
+			    [Billed Amount $],
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () )
+			)
+		formatString: \$#,0.00
+		displayFolder: dbt\Cost
+		lineageTag: efea9425-ed46-46f8-b59a-594be6137617
+
+	/// Billed TiB across all dbt jobs, scoped by is_dbt_job. Top-level jobs only, matching dbt Billed $.
+	measure 'dbt Billed TiB' =
+			CALCULATE (
+			    [Billed TiB],
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () )
+			)
+		formatString: #,0.0000
+		displayFolder: dbt\Cost
+		lineageTag: 257f6971-8132-4e41-a446-2497211a4bc3
+
+	/// Count of BigQuery jobs dbt submitted, scoped by is_dbt_job. Runs well ahead of dbt Node Executions: one node can fire several jobs, hooks fire their own, and only runs that wrote metadata are counted as node executions at all.
+	measure 'dbt Jobs' =
+			CALCULATE (
+			    COUNTROWS ( 'Fact' ),
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () )
+			)
+		formatString: #,0
+		displayFolder: dbt\Cost
+		lineageTag: bda0f9fb-540f-45b1-9f0d-b722cc310956
+
+	/// dbt cost that can be tied to a specific node, via either the job-id match against run metadata or the model-name job label.
+	measure 'dbt Attributed $' =
+			CALCULATE (
+			    [Billed Amount $],
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () ),
+			    KEEPFILTERS ( 'Fact'[dbt_attribution] IN { "Node (dbt metadata)", "Node (label)" } )
+			)
+		formatString: \$#,0.00
+		displayFolder: dbt\Cost
+		lineageTag: ecfe4924-d584-4f02-addd-36d35130054b
+
+	/// dbt cost that cannot be tied to a specific node - run-level work such as run-operations and on-run-end hooks, plus any job submitted without node labels. Enabling node labels across every environment drives this toward zero.
+	measure 'dbt Unattributed $' = [dbt Billed $] - [dbt Attributed $]
+		formatString: \$#,0.00
+		displayFolder: dbt\Cost
+		lineageTag: b5f93739-ce1d-461c-853d-bbafd1c5afa9
+
+	/// Share of dbt cost attributable to a node. Read every per-model cost figure on this page against this number: at low coverage the model breakdown is a minority of the real bill.
+	measure 'Attribution Coverage %' = DIVIDE ( [dbt Attributed $], [dbt Billed $] )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: dbt\Cost
+		lineageTag: df82ebd3-b605-4414-a0c7-77e69958e961
+
+	/// dbt cost divided by the number of runs present in the run metadata. Only meaningful where that metadata covers every run being costed - if it does not, the numerator spans more work than the denominator and the average reads high.
+	measure 'Cost per Invocation' = DIVIDE ( [dbt Billed $], [dbt Invocations] )
+		formatString: \$#,0.00
+		displayFolder: dbt\Cost
+		lineageTag: 2ed073e4-8ea9-45aa-bfb9-01f1b4294d26
+
+	/// Attributed dbt cost divided by the number of distinct models it covers.
+	measure 'Cost per Model' =
+			DIVIDE (
+			    [dbt Attributed $],
+			    CALCULATE (
+			        DISTINCTCOUNT ( 'Fact'[label_model_name] ),
+			        KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () ),
+			        KEEPFILTERS ( NOT ISBLANK ( 'Fact'[label_model_name] ) )
+			    )
+			)
+		formatString: \$#,0.0000
+		displayFolder: dbt\Cost
+		lineageTag: 41904e3b-5505-4354-8e20-35bdda456913
+
+	/// Cost of jobs whose node was built with --full-refresh. Covers only runs present in the run metadata, which is where the full-refresh flag comes from. node_type is filtered to Model because tests carry the same flag but are not builds. The is_dbt_job filter is belt-and-braces: the join to node executions already restricts this to dbt jobs, but the explicit filter keeps it correct if that relationship's cross-filter direction ever changes.
+	measure 'Full-Refresh Premium $' =
+			CALCULATE (
+			    [Billed Amount $],
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[was_full_refresh] = TRUE () ),
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () )
+			)
+		formatString: \$#,0.00
+		displayFolder: dbt\Cost
+		lineageTag: 366c62bd-f4d3-41a6-933b-5bffb1ea6118
+
+	/// Cost of billed bytes that were never scanned - BigQuery's per-query minimum and its rounding increment. Scoped to dbt jobs via is_dbt_job, consistent with dbt Billed $. No threshold parameter is needed: total_bytes_billed already encodes the floor, so billed minus processed IS the waste. Counts top-level jobs only, consistent with Billed Amount $. Read it as a run-frequency diagnostic rather than a cost lever: the absolute amounts are small, but a rising share signals a project running many small models far more often than the data changes.
+	measure 'Minimum-Billing Waste $' =
+			VAR DefaultRate =
+			    CALCULATE (
+			        MAX ( 'dim_Region_Cost'[usd_per_tib] ),
+			        REMOVEFILTERS ( 'dim_Region_Cost' ),
+			        'dim_Region_Cost'[is_default] = TRUE ()
+			    )
+			RETURN
+			    SUMX (
+			        FILTER (
+			            'Fact',
+			            ISBLANK ( 'Fact'[parent_job_id] )
+			                && 'Fact'[is_dbt_job] = TRUE ()
+			        ),
+			        DIVIDE (
+			            MAX ( 'Fact'[total_bytes_billed] - 'Fact'[total_bytes_processed], 0 ),
+			            POWER ( 2, 40 )
+			        )
+			            * COALESCE ( RELATED ( 'dim_Region_Cost'[usd_per_tib] ), DefaultRate )
+			    )
+		formatString: \$#,0.0000
+		displayFolder: dbt\Waste
+		lineageTag: 80b3025b-e425-4a0c-a82e-26a4d25bdc44
+
+	/// Billed bytes divided by scanned bytes, across top-level dbt jobs only. Above 1.0 means paying for more than you scan - the 10 MB floor and rounding on many small queries. Below 1.0 means the result cache is billing nothing for bytes it still reports as processed, so a cache-heavy set sits under 1 without anything being wrong.
+	measure 'Billed to Processed Ratio' =
+			CALCULATE (
+			    DIVIDE (
+			        SUM ( 'Fact'[total_bytes_billed] ),
+			        SUM ( 'Fact'[total_bytes_processed] )
+			    ),
+			    KEEPFILTERS ( 'Fact'[parent_job_id] = BLANK () ),
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () )
+			)
+		formatString: #,0.00"x"
+		displayFolder: dbt\Waste
+		lineageTag: 9de9f21a-f341-40d7-8bc7-78febae4bd13
+
+	/// Cost of jobs whose resource-type label marks them as tests. Label-based on purpose: it covers every labelled run, including runs that wrote no dbt artifacts at all, which a join through the run metadata cannot see. Note that since test executions gained a real job_id, precise attribution through dbt_node_executions[node_type] = "Test" is now possible as well - it is narrower (artifact runs only, 46 executions) but exact, and does not depend on the label being set. The two answer different questions; this one deliberately favours coverage.
+	measure 'Test Spend $' =
+			CALCULATE (
+			    [Billed Amount $],
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () ),
+			    KEEPFILTERS ( 'Fact'[label_resource_type] = "test" )
+			)
+		formatString: \$#,0.00
+		displayFolder: dbt\Quality
+		lineageTag: 203b0e16-6766-4efe-b578-496753842213
+
+	/// Count of test executions that actually ran - pass, fail, warn or error, excluding skipped. A test is attributed to the first node it tests, so this breaks down correctly by layer, schema or model. Skipped tests are counted by Tests Skipped.
+	measure 'Tests Executed' =
+			-- Skipped tests are excluded: dbt records a row for a test it never ran when the
+			-- model it guards was skipped, and counting those as executed overstates the
+			-- denominator badly. The 28 Jul 13:30 run recorded 6 test rows - 1 failure and 5
+			-- skips - and the KPI card rendered "5 / 6", implying five passes, when in truth
+			-- one test ran and it failed. See Tests Skipped to keep the skips visible.
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] <> "Skipped" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: 41e1deaf-2f21-40a3-a807-0a6ac3453f21
+
+	/// Test executions that did not pass - fail, error or warn. Skipped tests are NOT counted here: a skipped test has no verdict, so calling it a failure asserts a data problem nobody checked. Note that warn is currently folded in with fail; splitting it out is an open decision.
+	measure 'Tests Failed' =
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] IN { "Failed", "Warned" } ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: 1b6652c6-0505-477b-bdf0-bb024e299941
+
+	/// Share of test executions that passed, counting only tests that actually ran. Skipped tests are excluded from the denominator, and any filter on the outcome columns is ignored so the ratio cannot be narrowed by its own dimension. Returns 0 when tests ran but none passed, blank when no test ran.
+	measure 'Test Pass Rate %' =
+			-- Spelled out rather than reusing [Tests Executed] for the same reason as
+			-- dbt Success Rate %: both halves must sit inside a filter context that ignores
+			-- the outcome columns, otherwise the Run outcome slicer narrows numerator and
+			-- denominator together and the ratio reports whatever was selected.
+			VAR _Ran =
+			    CALCULATE (
+			        COUNTROWS ( 'dbt_node_executions' ),
+			        KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			        'dbt_node_executions'[status_group] <> "Skipped",
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+			VAR _Passed =
+			    CALCULATE (
+			        COUNTROWS ( 'dbt_node_executions' ),
+			        KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			        'dbt_node_executions'[status_group] = "OK",
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+			RETURN
+			    -- 0% when tests ran but none passed; blank only when no test ran.
+			    IF ( NOT ISBLANK ( _Ran ), DIVIDE ( COALESCE ( _Passed, 0 ), _Ran ) )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: dbt\Quality
+		lineageTag: 85312337-d756-49a3-bd5c-26b31a077a2d
+
+	/// Total rows returned by failing tests - the size of the data-quality problem, not just how many tests are red. Model rows carry NULL in failures rather than 0, so the node_type filter is belt-and-braces rather than strictly required.
+	measure 'Failing Rows' =
+			CALCULATE (
+			    SUM ( 'dbt_node_executions'[failures] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: da62d3d8-45fa-4067-95ff-0dd325b0585d
+
+	/// Change in attributed dbt cost versus the previous run, for regression detection. Both sides are explicitly scoped to a single run, so the figure means the same thing at any grain: the latest run in context against the one before it. Needs at least two runs in scope - blank on the first, and blank when the latest run has no matched BigQuery cost. Covers only cost matched through the run metadata, so it moves with Attribution Coverage %.
+	measure 'Cost Delta vs Prior Run' =
+			VAR CurStart =
+			    MAX ( 'dbt_invocations'[run_started_at] )
+			VAR PrevStart =
+			    CALCULATE (
+			        MAX ( 'dbt_invocations'[run_started_at] ),
+			        REMOVEFILTERS ( 'dbt_invocations' ),
+			        'dbt_invocations'[run_started_at] < CurStart
+			    )
+			VAR CurCost =
+			    CALCULATE (
+			        [dbt Attributed $],
+			        REMOVEFILTERS ( 'dbt_invocations' ),
+			        'dbt_invocations'[run_started_at] = CurStart
+			    )
+			VAR PrevCost =
+			    CALCULATE (
+			        [dbt Attributed $],
+			        REMOVEFILTERS ( 'dbt_invocations' ),
+			        'dbt_invocations'[run_started_at] = PrevStart
+			    )
+			RETURN
+			    IF ( NOT ISBLANK ( PrevStart ), CurCost - PrevCost )
+		formatString: \$#,0.0000;-\$#,0.0000;\$0
+		displayFolder: dbt\Cost
+		lineageTag: 5718545b-dea6-46cb-a886-027acbcc2af7
+
+	/// dbt's cost as a share of all BigQuery spend visible under the current slicers. The denominator drops only the filter a visual puts on its own rows, so a grid can break dbt spend down by any dimension and each row still divides by the same page-level total. Slicers, page filters and the date context all stay in the denominator, so it answers 'what share of the bill I am looking at is this row'. Keep this measure out of row context - ALLSELECTED reads the shadow filter context, so wrapping it in SUMX over 'Fact', a calculated column or a calculation group would silently collapse the denominator to the current row.
+	measure 'dbt Share of Total Spend %' =
+			VAR AllSpend =
+			    CALCULATE (
+			        [Billed Amount $],
+			        ALLSELECTED ( 'Fact' ),
+			        ALLSELECTED ( 'dbt_models' ),
+			        ALLSELECTED ( 'dbt_node_executions' ),
+			        ALLSELECTED ( 'dbt_model_tags' ),
+			        ALLSELECTED ( 'dbt_invocations' )
+			    )
+			RETURN
+			    DIVIDE ( [dbt Billed $], AllSpend )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: dbt\Cost
+		lineageTag: d4dadbe6-2ea1-4687-971f-185834e42f12
+
+	/// Count of model and test outcomes in one number. Break it out by status group to read run health, and by node type to split models from tests. Not a cost measure - use dbt Billed $ for spend.
+	measure 'Run Outcomes' =
+			-- USERELATIONSHIP is new and essential. On the old run-health table the date
+			-- relationship was ACTIVE; on the unified table it must be inactive, because
+			-- Fact -> dim_Date plus the bidirectional Fact link already forms a path. Without
+			-- activating the direct one, date filtering routes through Fact - which reaches
+			-- only nodes that have a matching BigQuery job, silently dropping all 34 skipped
+			-- nodes from every date-filtered visual.
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: e01ce7b0-29bb-42c5-af53-7b6ef6104708
+
+	/// Models and tests that failed, errored, warned or were skipped. The single number to watch on a run: zero means every node ran and passed. Skipped is included because dbt skips a node only when something upstream failed - the data it should have written is missing either way. Unlike Run Health % this stays responsive to the Run outcome slicer, since it is a count rather than a ratio and is offered as a metric in the Explore grid.
+	measure 'Nodes Needing Attention' =
+			-- Skipped counts. A skipped node is not a neutral outcome: dbt skips a node because
+			-- something upstream failed, so the table it should have written is now stale and
+			-- the data is missing exactly as if the node had errored. Excluding it reported
+			-- "3 nodes need attention" on a model holding 24 skipped models and 10 skipped
+			-- tests. status_group_order already ranks Skipped above OK for the same reason.
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] IN { "Failed", "Warned", "Skipped" } ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: 92e3e96c-68ac-481a-afc9-058cfe181483
+
+	/// Share of model and test outcomes that were OK. Covers models and tests together, unlike dbt Success Rate % (models only) and Test Pass Rate % (tests only). Deliberately ignores any filter on the outcome columns so the ratio cannot be narrowed by its own dimension - selecting OK in the Run outcome slicer used to report 100%. Returns 0 when rows exist but none were OK, and blank only when no outcome is attributable at all.
+	measure 'Run Health %' =
+			-- The outcome columns are removed from the filter context on purpose. Without it
+			-- the ratio is self-fulfilling: the Run outcome slicer, a click on the Run
+			-- outcomes chart, or an Explore grid grouped by Run outcome narrows numerator and
+			-- denominator together, so selecting OK reported a flat 100% and selecting Failed
+			-- reported 0% - the measure described the selection rather than the run. Every
+			-- other filter (date, invocation, layer, schema, command) still applies.
+			--
+			-- The numerator uses a plain predicate rather than KEEPFILTERS so it OVERRIDES any
+			-- inbound filter on status_group instead of intersecting with it.
+			VAR _Total =
+			    CALCULATE (
+			        COUNTROWS ( 'dbt_node_executions' ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+			VAR _Ok =
+			    CALCULATE (
+			        COUNTROWS ( 'dbt_node_executions' ),
+			        'dbt_node_executions'[status_group] = "OK",
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+			RETURN
+			    -- COALESCE the numerator but keep the blank when there are no rows at all: a run
+			    -- in which nothing was OK must read 0.0% in red, not an em dash in the muted
+			    -- "not attributable" style, because DIVIDE ( BLANK (), n ) returns BLANK. The
+			    -- genuine no-rows case stays blank - KPI Strip HTML and Health Pill SVG both
+			    -- test ISBLANK to decide between "failed" and "nothing to report".
+			    IF ( NOT ISBLANK ( _Total ), DIVIDE ( COALESCE ( _Ok, 0 ), _Total ) )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: dbt\Quality
+		lineageTag: 7c2b347a-7397-4e34-a06f-4f63ab67914f
+
+	/// Rows written by dbt models, as reported by the adapter. Zero for views and for any metadata-only operation, so it is not a proxy for how much work a node did. Test rows are excluded: their rows_affected counts rows the test query returned, not rows written.
+	measure 'dbt Rows Written' =
+			-- node_type = Model is essential here, not tidiness: a test row's rows_affected is
+			-- the number of rows the test QUERY returned, which has nothing to do with rows
+			-- written to a table. Summing both together produces a meaningless number.
+			CALCULATE (
+			    SUM ( 'dbt_node_executions'[rows_affected] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Execution
+		lineageTag: aaaed238-6d44-45f8-88c8-ccc936de7292
+
+	/// Slot hours consumed by dbt jobs, scoped by is_dbt_job, from BigQuery's own accounting. Top-level jobs only, matching the cost measures. This is the metric that matters under slot or reservation pricing, where cost tracks compute time rather than bytes scanned - the rate table here models on-demand pricing only.
+	measure 'dbt Slot Hours' =
+			CALCULATE (
+			    DIVIDE ( SUM ( 'Fact'[total_slot_ms] ), 3600000 ),
+			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () ),
+			    KEEPFILTERS ( ISBLANK ( 'Fact'[parent_job_id] ) )
+			)
+		formatString: #,0.00
+		displayFolder: dbt\Cost
+		lineageTag: 54b90b39-0e2e-4016-ace2-db88d5e69830
+
+	/// Inline data bar for dbt Billed $ in the Cost by target table grid. Scales to the visible rows, so it re-normalises when the page is filtered.
+	measure 'Spend Meter SVG' =
+			-- CONFIG
+			VAR _Value = [dbt Billed $]
+			VAR _Fill  = "#2563EB"
+			VAR _Track = "#EEF1F5"
+			
+			-- NORMALIZATION: rescale to the visible rows, with 10% headroom so the widest
+			-- bar never touches the cell edge.
+			VAR _Max     = CALCULATE ( MAXX ( ALLSELECTED ( Fact[destination_table_id] ), [dbt Billed $] ) )
+			VAR _AxisMax = IF ( _Max > 0, _Max * 1.1, 1 )
+			VAR _BarW    = ROUND ( DIVIDE ( _Value, _AxisMax ) * 100, 0 )
+			
+			-- SVG ELEMENTS
+			VAR _Prefix = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 16' preserveAspectRatio='none'>"
+			VAR _Sort   = "<desc>" & FORMAT ( _Value, "000000000000.00" ) & "</desc>"
+			VAR _TrackR = "<rect x='0' y='5' width='100' height='6' rx='3' fill='" & _Track & "'/>"
+			VAR _BarR   = "<rect x='0' y='5' width='" & MAX ( _BarW, 1 ) & "' height='6' rx='3' fill='" & _Fill & "'/>"
+			VAR _Suffix = "</svg>"
+			
+			RETURN IF ( HASONEVALUE ( Fact[destination_table_id] ) && _Value > 0, _Prefix & _Sort & _TrackR & _BarR & _Suffix )
+		displayFolder: Presentation\SVG
+		lineageTag: d0db698b-2d30-46b8-8665-97c8b52bdc7a
+		dataCategory: ImageUrl
+
+	/// Inline data bar for dbt Models Built in the Execution by layer grid. Scales to the visible layers.
+	measure 'Models Meter SVG' =
+			-- CONFIG
+			VAR _Value = [dbt Models Built]
+			VAR _Fill  = "#7C3AED"
+			VAR _Track = "#EEF1F5"
+			
+			-- NORMALIZATION
+			VAR _Max     = CALCULATE ( MAXX ( ALLSELECTED ( dbt_models[layer] ), [dbt Models Built] ) )
+			VAR _AxisMax = IF ( _Max > 0, _Max * 1.1, 1 )
+			VAR _BarW    = ROUND ( DIVIDE ( _Value, _AxisMax ) * 100, 0 )
+			
+			-- SVG ELEMENTS
+			VAR _Prefix = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 16' preserveAspectRatio='none'>"
+			VAR _Sort   = "<desc>" & FORMAT ( _Value, "000000000000" ) & "</desc>"
+			VAR _TrackR = "<rect x='0' y='5' width='100' height='6' rx='3' fill='" & _Track & "'/>"
+			VAR _BarR   = "<rect x='0' y='5' width='" & MAX ( _BarW, 1 ) & "' height='6' rx='3' fill='" & _Fill & "'/>"
+			VAR _Suffix = "</svg>"
+			
+			RETURN IF ( HASONEVALUE ( dbt_models[layer] ) && _Value > 0, _Prefix & _Sort & _TrackR & _BarR & _Suffix )
+		displayFolder: Presentation\SVG
+		lineageTag: d93667e0-103b-44ae-9e7b-df3e2ef1f4b5
+		dataCategory: ImageUrl
+
+	/// Status pill for the Execution by layer grid. Colour plus a text label, so the state is never carried by hue alone. Renders nothing when Run Health % is blank - a blank health means no attributable outcome, not a failure.
+	measure 'Health Pill SVG' =
+			-- CONFIG
+			VAR _Health = [Run Health %]
+			VAR _Attn   = [Nodes Needing Attention]
+			
+			VAR _Good  = "#059669"
+			VAR _Warn  = "#D97706"
+			VAR _Bad   = "#DC2626"
+			VAR _GoodB = "#D1FAE5"
+			VAR _WarnB = "#FEF3C7"
+			VAR _BadB  = "#FEE2E2"
+			
+			VAR _IsGood = _Health >= 0.999 && _Attn = 0
+			VAR _IsWarn = NOT _IsGood && _Health >= 0.98
+			
+			VAR _Fg   = IF ( _IsGood, _Good,  IF ( _IsWarn, _Warn,  _Bad ) )
+			VAR _Bg   = IF ( _IsGood, _GoodB, IF ( _IsWarn, _WarnB, _BadB ) )
+			-- Short labels on purpose, and the viewBox is 62 wide rather than 50 so "Watch"
+			-- fits: at 50 the glyphs ran past the pill and rendered as "Wat". Text still
+			-- accompanies the colour so the state is never carried by hue alone. The column
+			-- carries an explicit width in the visual because tableEx would otherwise size
+			-- it to the "Health" header and squeeze the pill to a dash.
+			VAR _Text = IF ( _IsGood, "OK", IF ( _IsWarn, "Watch", "Fail" ) )
+			
+			-- SVG ELEMENTS
+			VAR _Prefix = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 62 22'>"
+			VAR _Sort   = "<desc>" & FORMAT ( _Health, "0.0000" ) & "</desc>"
+			VAR _Pill   = "<rect x='0' y='1' width='61' height='20' rx='10' fill='" & _Bg & "'/>"
+			VAR _Dot    = "<circle cx='10' cy='11' r='3.5' fill='" & _Fg & "'/>"
+			VAR _Label  = "<text x='18' y='15.5' font-family='Segoe UI, sans-serif' font-size='10.5' font-weight='600' fill='" & _Fg & "'>" & _Text & "</text>"
+			VAR _Suffix = "</svg>"
+			
+			-- Suppress the pill where the layer built nothing. Without this the blank layer
+			-- returns a pill, which is enough to keep an otherwise empty row in the table.
+			--
+			-- ISBLANK ( _Health ) is the important guard, not a nicety. A blank health means
+			-- the filter context cannot attribute any outcome to this layer - selecting one
+			-- target table leaves every layer but the model's own with nothing to report.
+			-- Without it the pill read "Fail": BLANK >= 0.999 is false so _IsGood fails,
+			-- BLANK >= 0.98 is false so _IsWarn fails, and the expression falls through to
+			-- Bad. Worse, BLANK = 0 is TRUE in DAX, so the _Attn test cannot catch it either.
+			RETURN
+			    IF (
+			        HASONEVALUE ( dbt_models[layer] ) && [dbt Models Built] > 0 && NOT ISBLANK ( _Health ),
+			        _Prefix & _Sort & _Pill & _Dot & _Label & _Suffix
+			    )
+		displayFolder: Presentation\SVG
+		lineageTag: 21bb4d5e-d224-411d-95cc-3d7b133e028d
+		dataCategory: ImageUrl
+
+	/// Markup for the six-card KPI strip at the top of the DBT Jobs pages, rendered by the HTML Content visual. The card CSS lives on the visual, not here. Accent colour is semantic: health and tests flip to amber or red so the colour carries the same signal as the number, and to a muted grey when nothing is attributable to the selection. The models card reads built-of-attempted, and the tests card counts only tests that ran, reporting skipped tests separately - a run where one test failed and five were skipped shows 0 / 1 with the skips named, not 5 / 6. Every model-side card guards for blank as well as zero, because a test-only invocation has no model rows at all.
+	measure 'KPI Strip HTML' =
+			VAR _Spend     = [dbt Billed $]
+			VAR _Models    = [dbt Models Built]
+			VAR _Attempted = [dbt Models Attempted]
+			VAR _NodeExec  = [dbt Node Executions]
+			VAR _Health    = [Run Health %]
+			VAR _Attn      = [Nodes Needing Attention]
+			VAR _CostRun   = [Cost per Invocation]
+			VAR _Jobs      = [dbt Jobs]
+			VAR _Runtime   = [dbt Total Runtime (min)]
+			VAR _AvgModel  = [dbt Avg Model Runtime (s)]
+			VAR _Tests     = [Tests Executed]
+			VAR _Failed    = [Tests Failed]
+			VAR _Skipped   = [Tests Skipped]
+			VAR _Share     = [dbt Share of Total Spend %]
+			
+			-- CONFIG: semantic accent per card. Health and tests flip to warn/bad so the
+			-- colour carries the same signal as the number.
+			VAR _cBlue   = "#2563EB"
+			VAR _cViolet = "#7C3AED"
+			VAR _cCyan   = "#0891B2"
+			VAR _cAmber  = "#D97706"
+			VAR _cGood   = "#059669"
+			VAR _cBad    = "#DC2626"
+			VAR _cMuted  = "#64748B"
+			
+			VAR _Dash = "&mdash;"
+			
+			-- A test-only invocation (dbt test rather than dbt build) has NO model rows at all,
+			-- and three of the eight recorded runs are test-only. Every model-side card must
+			-- therefore handle blank, not just zero: FORMAT ( BLANK (), "#,##0" ) returns an
+			-- empty string, which rendered the captions as a bare " model executions" and the
+			-- runtime card as a stray " min" with no number in front of it.
+			VAR _NoModels = ISBLANK ( _Attempted ) && ISBLANK ( _NodeExec )
+			
+			-- Tests can be blank rather than zero: pick one target table and the tests belong
+			-- to whichever models write it, so a selection that maps to no test has nothing
+			-- to report. Guard for it explicitly - BLANK = 0 is TRUE in DAX, so a plain
+			-- _Failed = 0 test would call that "all passing" and colour the card green.
+			--
+			-- Since Tests Executed now excludes skipped tests, _NoTests is ALSO true for a run
+			-- where every test was skipped. That is a different statement from "no tests here",
+			-- so the skipped count is tested first everywhere below.
+			VAR _NoTests   = ISBLANK ( _Tests )
+			VAR _AnySkips  = COALESCE ( _Skipped, 0 ) > 0
+			VAR _SkipNote  = IF ( _AnySkips, " &middot; " & FORMAT ( _Skipped, "#,##0" ) & " skipped", "" )
+			
+			VAR _HealthColor = IF ( ISBLANK ( _Health ), _cMuted, IF ( _Health >= 0.999, _cGood, IF ( _Health >= 0.98, _cAmber, _cBad ) ) )
+			VAR _ModelColor  = IF ( _NoModels, _cMuted, _cViolet )
+			VAR _TestColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoTests && _AnySkips, _cAmber,
+			        _NoTests, _cMuted,
+			        _Failed = 0 && NOT _AnySkips, _cGood,
+			        _Failed = 0, _cAmber,
+			        _Failed <= 2, _cAmber,
+			        _cBad
+			    )
+			
+			-- Captions carry the real ratios and the counts that give the headline context.
+			VAR _SpendCap  = FORMAT ( _Share, "0.0%" ) & " of the BigQuery bill"
+			VAR _ModelsCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoModels, "no models in this selection",
+			        ISBLANK ( _Attempted ), FORMAT ( _NodeExec, "#,##0" ) & " model executions",
+			        _Models = _Attempted, "every one of " & FORMAT ( _Attempted, "#,##0" ) & " attempted",
+			        FORMAT ( _Models, "#,##0" ) & " of " & FORMAT ( _Attempted, "#,##0" ) & " attempted"
+			    )
+			VAR _HealthCap =
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( _Health ), "no outcome attributable to this selection",
+			        _Attn = 0, "every node ran and passed",
+			        FORMAT ( _Attn, "#,##0" ) & IF ( _Attn = 1, " node needs", " nodes need" ) & " attention"
+			    )
+			VAR _CostCap = FORMAT ( _Jobs, "#,##0" ) & IF ( _Jobs = 1, " billable BigQuery job", " billable BigQuery jobs" )
+			VAR _RuntimeCap =
+			    IF (
+			        ISBLANK ( _AvgModel ),
+			        "no model runtime in this selection",
+			        FORMAT ( _AvgModel, "#,##0.0" ) & "s average per model"
+			    )
+			VAR _TestCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoTests && _AnySkips, FORMAT ( _Skipped, "#,##0" ) & " tests skipped, none ran",
+			        _NoTests, "no tests attributable to this selection",
+			        _Failed = 0, FORMAT ( _Tests, "#,##0" ) & " ran, all passing" & _SkipNote,
+			        FORMAT ( _Failed, "#,##0" ) & " of " & FORMAT ( _Tests, "#,##0" ) & " failing" & _SkipNote
+			    )
+			
+			-- An em dash rather than "0": zero passing tests and no attributable tests are
+			-- different statements, and FORMAT ( BLANK (), ... ) returns an empty string,
+			-- which rendered the card as a bare " / ".
+			VAR _ModelsValue  = IF ( _NoModels, _Dash, FORMAT ( _Models, "#,##0" ) )
+			VAR _HealthValue  = IF ( ISBLANK ( _Health ), _Dash, FORMAT ( _Health, "0.0%" ) )
+			VAR _RuntimeValue = IF ( ISBLANK ( _Runtime ), _Dash, FORMAT ( _Runtime, "#,##0.0" ) & "<small> min</small>" )
+			VAR _TestValue =
+			    SWITCH (
+			        TRUE (),
+			        -- Every test skipped: show 0 ran out of the number dbt recorded, so the card
+			        -- cannot be read as "nothing to test here".
+			        _NoTests && _AnySkips, "0<small> / " & FORMAT ( _Skipped, "#,##0" ) & "</small>",
+			        _NoTests, _Dash,
+			        FORMAT ( _Tests - _Failed, "#,##0" ) & "<small> / " & FORMAT ( _Tests, "#,##0" ) & "</small>"
+			    )
+			
+			VAR _Cards =
+			    KpiCard ( 0, _cBlue, "dbt spend", FORMAT ( _Spend, "$#,##0.00" ), _SpendCap )
+			        & KpiCard ( 1, _ModelColor, "models built", _ModelsValue, _ModelsCap )
+			        & KpiCard ( 2, _HealthColor, "run health", _HealthValue, _HealthCap )
+			        & KpiCard ( 3, _cCyan, "cost per run", FORMAT ( _CostRun, "$#,##0.00" ), _CostCap )
+			        & KpiCard ( 4, _cAmber, "total runtime", _RuntimeValue, _RuntimeCap )
+			        & KpiCard ( 5, _TestColor, "tests", _TestValue, _TestCap )
+			
+			RETURN "<div class='strip'>" & _Cards & "</div>"
+		displayFolder: Presentation\HTML
+		lineageTag: e9dc0eb0-7b02-4a76-bfb7-afffdf008bad
+
+	/// Active-filter chip row for the DBT Jobs page header, rendered by the HTML Content visual. Names the first two filters in full and collapses the rest into a count so the row never overflows. Any slicer added to the page must be added to the three SWITCH blocks or it will not appear. Entries 8 and 9 (Invocation, Invocation date) exist for the Nodes Failed page's drawer; on the other dbt pages those columns are never filtered, so the chips simply never light up.
+	measure 'Filter Chips HTML' =
+			VAR _MaxNamed = 2
+			
+			VAR _Dims =
+			    DATATABLE (
+			        "Ord", INTEGER, "Label", STRING,
+			        { { 1, "Date" }, { 2, "Command" }, { 3, "Target" }, { 4, "Layer" }, { 5, "Schema" }, { 6, "Environment" }, { 7, "Outcome" }, { 8, "Invocation" }, { 9, "Invocation date" } }
+			    )
+			
+			VAR _State =
+			    ADDCOLUMNS (
+			        _Dims,
+			        "@On",
+			            SWITCH (
+			                [Label],
+			                "Date",        IF ( ISFILTERED ( dim_Date[Date] ), 1, 0 ),
+			                "Command",     IF ( ISFILTERED ( dbt_invocations[dbt_command] ), 1, 0 ),
+			                "Target",      IF ( ISFILTERED ( dbt_invocations[target_name] ), 1, 0 ),
+			                "Layer",       IF ( ISFILTERED ( dbt_models[layer] ), 1, 0 ),
+			                "Schema",      IF ( ISFILTERED ( dbt_models[schema_name] ), 1, 0 ),
+			                "Environment", IF ( ISFILTERED ( Fact[label_env] ), 1, 0 ),
+			                "Outcome",     IF ( ISFILTERED ( dbt_node_executions[status_group] ), 1, 0 ),
+			                "Invocation",  IF ( ISFILTERED ( dbt_invocations[command_invocation_id] ), 1, 0 ),
+			                "Invocation date", IF ( ISFILTERED ( dbt_invocations[run_date] ), 1, 0 ),
+			                0
+			            ),
+			        "@Detail",
+			            SWITCH (
+			                [Label],
+			                "Command",     CONCATENATEX ( VALUES ( dbt_invocations[dbt_command] ), dbt_invocations[dbt_command], ", " ),
+			                "Target",      CONCATENATEX ( VALUES ( dbt_invocations[target_name] ), dbt_invocations[target_name], ", " ),
+			                "Layer",       CONCATENATEX ( VALUES ( dbt_models[layer] ), dbt_models[layer], ", " ),
+			                "Schema",      CONCATENATEX ( VALUES ( dbt_models[schema_name] ), dbt_models[schema_name], ", " ),
+			                "Environment", CONCATENATEX ( VALUES ( Fact[label_env] ), Fact[label_env], ", " ),
+			                "Outcome",     CONCATENATEX ( VALUES ( dbt_node_executions[status_group] ), dbt_node_executions[status_group], ", " ),
+			                "Date",        FORMAT ( MIN ( dim_Date[Date] ), "d MMM yyyy" ) & " to " & FORMAT ( MAX ( dim_Date[Date] ), "d MMM yyyy" ),
+			                -- First eight characters only. A dbt invocation id is a 36-character
+			                -- GUID and two of them would push every other chip off the row; the
+			                -- prefix is also how the Recent runs table on the overview page and
+			                -- the Fact[dbt Run] label both identify a run, so it reads the same.
+			                "Invocation",  CONCATENATEX ( VALUES ( dbt_invocations[command_invocation_id] ), LEFT ( dbt_invocations[command_invocation_id], 8 ), ", " ),
+			                "Invocation date", CONCATENATEX ( VALUES ( dbt_invocations[run_date] ), FORMAT ( dbt_invocations[run_date], "d MMM" ), ", " ),
+			                BLANK ()
+			            ),
+			        "@Count",
+			            SWITCH (
+			                [Label],
+			                "Command",     COUNTROWS ( VALUES ( dbt_invocations[dbt_command] ) ),
+			                "Target",      COUNTROWS ( VALUES ( dbt_invocations[target_name] ) ),
+			                "Layer",       COUNTROWS ( VALUES ( dbt_models[layer] ) ),
+			                "Schema",      COUNTROWS ( VALUES ( dbt_models[schema_name] ) ),
+			                "Environment", COUNTROWS ( VALUES ( Fact[label_env] ) ),
+			                "Outcome",     COUNTROWS ( VALUES ( dbt_node_executions[status_group] ) ),
+			                "Invocation",  COUNTROWS ( VALUES ( dbt_invocations[command_invocation_id] ) ),
+			                "Invocation date", COUNTROWS ( VALUES ( dbt_invocations[run_date] ) ),
+			                1
+			            )
+			    )
+			
+			VAR _Active = FILTER ( _State, [@On] = 1 )
+			VAR _N = COUNTROWS ( _Active )
+			
+			-- Name the first few filters in full, then collapse the rest into a count so
+			-- the row never overflows its container.
+			VAR _Named = TOPN ( _MaxNamed, _Active, [Ord], ASC )
+			VAR _Extra = _N - COUNTROWS ( _Named )
+			
+			VAR _Chips =
+			    CONCATENATEX (
+			        _Named,
+			        "<span class='chip'><b>" & [Label] & "</b>"
+			            & IF (
+			                [@Count] > 3 && [Label] <> "Date",
+			                "<em>" & FORMAT ( [@Count], "#,##0" ) & " selected</em>",
+			                IF ( ISBLANK ( [@Detail] ), "", "<em>" & [@Detail] & "</em>" )
+			            )
+			            & "</span>",
+			        "",
+			        [Ord], ASC
+			    )
+			
+			VAR _More = IF ( _Extra > 0, "<span class='chip more'>+" & FORMAT ( _Extra, "#,##0" ) & " more</span>", "" )
+			
+			RETURN
+			    IF (
+			        _N = 0,
+			        "<div class='chips'><span class='chip none'>No filters applied</span></div>",
+			        "<div class='chips'>" & _Chips & _More & "</div>"
+			    )
+		displayFolder: Presentation\HTML
+		lineageTag: 1311a6a7-d55a-42d7-87b0-0c7f16d63090
+
+	/// Tooltip text for the Dimension slicer on the DBT Jobs > Explore tab. One brief line per DBT Dimension field parameter item, keyed on the order column so a label rename cannot detach it. Entry 19 (Node Type) is present in anticipation of that dimension being added to the parameter; it is harmless while unused.
+	measure 'About this dimension' =
+			-- One line per DBT Dimension field-parameter item, keyed on the ORDER column rather
+			-- than the label, so renaming a label never silently detaches its tooltip. Any
+			-- entry added to the DBT Dimension parameter must be added here too or its pill
+			-- shows no tooltip at all.
+			SWITCH (
+			    SELECTEDVALUE ( 'DBT Dimension'[DBT Dimension Order] ),
+			    0, "Top-level folder under models/ - however the project organises its layers. One per model, so a cost or runtime split by layer adds up to the total.",
+			    1, "Second folder level under models/. Blank when the model sits directly in its layer folder rather than a subfolder.",
+			    2, "The BigQuery dataset the model's table or view is written to.",
+			    3, "The dbt model's name, matched to the model_name label on BigQuery jobs.",
+			    4, "How the model is built: table, view, incremental or ephemeral. Views are metadata-only, so rebuilding them is free.",
+			    5, "The dbt package the model comes from - your own project, or an installed one such as dbt_artifacts.",
+			    6, "A dbt tag carried by the model. A model can carry several, so a tag breakdown double counts.",
+			    7, "Buckets each execution by wall-clock time: Not run, 0-10s, 10-30s, 30-60s, 1-5 min, 5 min+. A skipped node reports zero runtime but never executed, so it sits in its own Not run band rather than counting as the fastest possible run.",
+			    8, "Raw dbt outcome of the execution. Models report success, error or skipped; tests report pass, fail, warn, error or skipped. A blank entry covers BigQuery jobs with no matching dbt node.",
+			    9, "The BigQuery table the job wrote to. Incremental temp tables fold into their model; ad-hoc SELECTs group as (anonymous SELECT result).",
+			    10, "The kind of SQL the job ran, e.g. SELECT, CREATE_TABLE_AS_SELECT or MERGE.",
+			    11, "Which kind of dbt node the job served: model, test, snapshot or operation. Taken from the job label, so it is available even for runs that wrote no dbt artifacts. Blank when dbt had no node context.",
+			    12, "The env label on the job - dev, uat or prod - as set by the run.",
+			    13, "The BigQuery region the job ran in. Price per TiB scanned differs by region.",
+			    14, "The service account or person that submitted the BigQuery job.",
+			    15, "The dbt project name from dbt_project.yml. Use it to separate projects that share one metadata dataset.",
+			    16, "The dbt target the run used, e.g. dev or uat.",
+			    17, "The dbt command that was invoked, e.g. build, run or test.",
+			    18, "One row per dbt run, labelled by submission time plus a fragment of its invocation id. Sort by cost to find the most expensive runs. A run covers everything it fired - model builds, tests and hooks alike - so the label names no command.",
+			    19, "Whether the row is a model execution or a test execution. Both live in one table now, so this is the switch between the two halves of a run.",
+			    BLANK ()
+			)
+		isHidden
+		displayFolder: dbt\Help
+		lineageTag: b5d92628-32c2-49bb-817b-d379381eac25
+
+	/// Tooltip text for the Metric slicer on the DBT Jobs > Explore tab. One brief line per DBT Metric field parameter item, keyed on the order column so a label rename cannot detach it. Add an entry here whenever a metric is added to the parameter.
+	measure 'About this metric' =
+			-- One line per DBT Metric field-parameter item, keyed on the ORDER column rather
+			-- than the label, so renaming a label never silently detaches its tooltip. Any
+			-- entry added to the DBT Metric parameter must be added here too or its pill shows
+			-- no tooltip at all.
+			SWITCH (
+			    SELECTEDVALUE ( 'DBT Metric'[DBT Metric Order] ),
+			    0, "On-demand cost of every BigQuery job dbt submitted - the complete dbt bill, hooks and run-operations included.",
+			    1, "Terabytes billed across all dbt jobs. On-demand pricing charges per TiB scanned.",
+			    2, "Compute time consumed by dbt jobs, from BigQuery's own accounting. The metric that matters under slot or reservation pricing.",
+			    3, "dbt's cost as a share of the BigQuery spend visible under the current slicers. Every row divides by the same page-level total, so shares down a column can be compared and summed.",
+			    4, "Attributed dbt cost divided by the number of distinct models it covers - the average cost of building one model.",
+			    5, "Cost of bytes billed but never scanned - BigQuery's per-query minimum and rounding. A rising share means models run more often than the data changes.",
+			    6, "Count of BigQuery jobs dbt submitted. Far higher than Model Executions: one node can fire several jobs, and hooks fire their own.",
+			    7, "Model executions that actually ran - success or error. Skipped nodes are excluded: dbt records a row for them, but they never reached BigQuery. Models only, despite what the underlying measure is called.",
+			    8, "Distinct models that built successfully. Counts unique nodes rather than attempts, so a model rebuilt several times in the window counts once.",
+			    9, "Total model wall-clock time in minutes, summed across the current selection. Test runtime is excluded.",
+			    10, "Mean seconds per model execution, over models that actually ran. Skipped nodes are excluded because dbt reports zero runtime for them rather than blank, which would drag the mean toward zero in proportion to how badly the run failed.",
+			    11, "Wall-clock seconds of the slowest single model execution in view.",
+			    12, "Rows written by dbt models, as reported by the adapter. Zero for views and metadata-only work, so not a proxy for effort.",
+			    13, "Share of attempted model executions that finished with status = success. The denominator counts every model row dbt recorded, skips included, so a failure that skips its dependants is reflected in full.",
+			    14, "Share of all model AND test outcomes that were OK - the combined health of the run.",
+			    15, "Models and tests that failed, errored, warned or were skipped. Zero means every node ran and passed. Skips count because dbt only skips a node when something upstream failed.",
+			    16, "Test executions that actually ran - pass, fail, warn or error - attributed to the node each test checks. Skipped tests are reported separately, since a skipped test has no verdict.",
+			    17, "Test executions that did not pass - fail, error or warn. Skipped tests are NOT counted here: they never ran, so calling them failures would assert a problem nobody checked.",
+			    18, "Total rows returned by failing tests - the size of the data-quality problem, not just how many tests are red.",
+			    19, "Cost of BigQuery jobs labelled resource_type = test - what data-quality testing costs you. Label-based, so it covers runs that wrote no dbt artifacts at all.",
+			    20, "Distinct models this selection tried to build - success, error and skipped together. The denominator behind 'built 3 of 15'.",
+			    21, "Model executions that ended in error. Failed builds still cost money on whatever they scanned before failing.",
+			    22, "Tests dbt recorded but never ran, because the model they guard was skipped. Their verdict is unknown, not passing.",
+			    23, "Share of tests that passed, counting only tests that actually ran. Skipped tests are excluded from the denominator so a cascade cannot flatter the rate.",
+			    24, "Distinct dbt invocations, counting runs of any command. Test-only runs are included - they submit BigQuery jobs and cost money like any other.",
+			    BLANK ()
+			)
+		isHidden
+		displayFolder: dbt\Help
+		lineageTag: 4c764b90-5cb0-47ad-ace7-cdf17ca19ab2
+
+	/// Five most recent dbt invocations for the DBT Jobs > Overview tab, rendered as an HTML table by the HTML Content visual. Columns are Dbt run, Command (dbt_command chip plus target_name), Schema, Execution and Health. Deliberately ignores the page date slicer via REMOVEFILTERS(dim_Date): the visual is called Recent, so narrowing the date range must not hide the newest runs. Execution is summed node runtime across models and tests. Health counts Failed and Skipped nodes separately and names both, because one failure skips its whole downstream DAG and a single combined non-OK total reads as if every one of those nodes broke. Failed nodes drive the red pill; skips with no failure are amber Partial. The table is wrapped in a .tw div whose only job is to clip overflow so the visual can never grow a scrollbar.
+	measure 'Recent Runs HTML' =
+			VAR _N = 5
+			
+			-- REMOVEFILTERS(dim_Date) is the point of this visual: it is called Recent, so a
+			-- narrowed date slicer must not hide the newest invocations. Other slicers still
+			-- apply, so the panel stays consistent with the rest of the tab.
+			VAR _Rows =
+			    CALCULATETABLE (
+			        TOPN (
+			            _N,
+			            ADDCOLUMNS (
+			                SUMMARIZE (
+			                    dbt_invocations,
+			                    dbt_invocations[command_invocation_id],
+			                    dbt_invocations[run_started_at],
+			                    dbt_invocations[target_schema],
+			                    dbt_invocations[dbt_command],
+			                    dbt_invocations[target_name]
+			                ),
+			                -- Summed node runtime, not wall clock: a test-only invocation has no
+			                -- model rows, so an end-minus-start over models would be blank.
+			                "@Sec", CALCULATE ( SUM ( dbt_node_executions[total_node_runtime] ) ),
+			                -- Failed and Skipped are counted apart, never as one non-OK total. A
+			                -- single broken model skips its entire downstream DAG, so the combined
+			                -- number is dominated by collateral: the two runs on 28 Jul are 1 fail
+			                -- + 17 skips each, and "18 nodes" read as eighteen things being broken.
+			                "@Fail", CALCULATE ( COUNTROWS ( dbt_node_executions ), dbt_node_executions[status_group] = "Failed" ),
+			                "@Skip", CALCULATE ( COUNTROWS ( dbt_node_executions ), dbt_node_executions[status_group] = "Skipped" )
+			            ),
+			            dbt_invocations[run_started_at], DESC
+			        ),
+			        REMOVEFILTERS ( dim_Date )
+			    )
+			
+			VAR _MaxSec = MAXX ( _Rows, [@Sec] )
+			
+			-- Row ordinal drives the staggered entrance delay in the stylesheet.
+			VAR _Ranked =
+			    ADDCOLUMNS (
+			        _Rows,
+			        "@Rank",
+			            VAR _d = dbt_invocations[run_started_at]
+			            RETURN COUNTROWS ( FILTER ( _Rows, dbt_invocations[run_started_at] >= _d ) )
+			    )
+			
+			VAR _Body =
+			    CONCATENATEX (
+			        _Ranked,
+			        VAR _Rank = [@Rank]
+			        VAR _Id   = LEFT ( dbt_invocations[command_invocation_id], 8 )
+			        VAR _When = FORMAT ( dbt_invocations[run_started_at], "dd MMM HH:mm" )
+			        VAR _Cmd  = dbt_invocations[dbt_command]
+			        VAR _Tgt  = dbt_invocations[target_name]
+			        VAR _Sch  = dbt_invocations[target_schema]
+			
+			        -- Palette covers the commands that are not in the data yet (run, seed,
+			        -- snapshot) so a new command type does not fall back to grey unnoticed.
+			        VAR _CmdClass =
+			            SWITCH (
+			                LOWER ( _Cmd ),
+			                "build", "cm-build",
+			                "run", "cm-run",
+			                "test", "cm-test",
+			                "seed", "cm-seed",
+			                "snapshot", "cm-snap",
+			                "cm-other"
+			            )
+			        VAR _Sec  = [@Sec]
+			        VAR _Fail = COALESCE ( [@Fail], 0 )
+			        VAR _Skip = COALESCE ( [@Skip], 0 )
+			
+			        VAR _Dur =
+			            SWITCH (
+			                TRUE (),
+			                ISBLANK ( _Sec ), "&mdash;",
+			                _Sec < 60, FORMAT ( _Sec, "0.0" ) & "<small>s</small>",
+			                FORMAT ( INT ( _Sec / 60 ), "0" ) & "<small>m</small> "
+			                    & FORMAT ( MOD ( INT ( _Sec ), 60 ), "00" ) & "<small>s</small>"
+			            )
+			
+			        VAR _Pct = IF ( ISBLANK ( _Sec ), 0, MAX ( 3, ROUND ( DIVIDE ( _Sec, _MaxSec ) * 100, 0 ) ) )
+			
+			        -- Both counts are named even when one of them is 1, so the sub-line is never
+			        -- an unlabelled number the reader has to attribute to the pill themselves.
+			        VAR _Detail =
+			            IF ( _Fail > 0, FORMAT ( _Fail, "#,##0" ) & " failed", "" )
+			                & IF ( _Fail > 0 && _Skip > 0, " &middot; ", "" )
+			                & IF ( _Skip > 0, FORMAT ( _Skip, "#,##0" ) & " skipped", "" )
+			
+			        -- Three states, not two. Skips with no failure are not a pass - the DAG did
+			        -- not run - but they are not a breakage either, so they get their own amber
+			        -- pill rather than being flattened into Failed as they were before.
+			        -- The word carries the outcome, not just the colour, so the table still reads
+			        -- correctly in greyscale or to a colour-blind reader.
+			        VAR _Pill =
+			            SWITCH (
+			                TRUE (),
+			                _Fail > 0, "<span class='p no'><i></i>Failed</span>",
+			                _Skip > 0, "<span class='p wa'><i></i>Partial</span>",
+			                "<span class='p ok'><i></i>Pass</span>"
+			            )
+			                & IF ( _Detail <> "", "<span class='fx'>" & _Detail & "</span>", "" )
+			
+			        RETURN
+			            "<tr style='--i:" & _Rank & "'>"
+			                & "<td><span class='id'>#" & _Id & "</span>"
+			                    & "<span class='sub'>" & _When & "</span></td>"
+			                & "<td><span class='cm " & _CmdClass & "'>" & _Cmd & "</span>"
+			                    & "<span class='tg' title='" & _Tgt & "'>" & _Tgt & "</span></td>"
+			                & "<td><span class='sc' title='" & _Sch & "'>" & _Sch & "</span></td>"
+			                & "<td class='ex'><span class='v'>" & _Dur & "</span>"
+			                    & "<span class='b'><i style='width:" & _Pct & "%'></i></span></td>"
+			                & "<td class='h'>" & _Pill & "</td>"
+			            & "</tr>",
+			        "",
+			        [@Rank], ASC
+			    )
+			
+			VAR _Head =
+			    "<div class='hd'><div class='ht'>Recent dbt runs</div>"
+			    & "<div class='hs'>Last " & _N & " invocations &middot; always newest, ignores the date filter</div></div>"
+			
+			-- The .tw wrapper exists purely to clip. Sizing the rows to fit a fixed card by
+			-- arithmetic proved unreliable - the usable height is smaller than the 442px the
+			-- visual reports - so the wrapper hard-clips instead and the scrollbar cannot
+			-- come back. It carries no border-radius on purpose: a ROUNDED clip is what
+			-- rasterises a layer and softens text, which is why .rr must not clip.
+			VAR _Table =
+			    "<div class='tw'><table class='t'><thead><tr>"
+			        & "<th>Dbt run</th><th>Command</th><th>Schema</th><th class='ex'>Execution</th><th class='h'>Health</th>"
+			    & "</tr></thead><tbody>" & _Body & "</tbody></table></div>"
+			
+			RETURN
+			    IF (
+			        ISBLANK ( COUNTROWS ( _Rows ) ),
+			        "<div class='rr'><div class='empty'>No dbt invocations for this selection</div></div>",
+			        "<div class='rr'>" & _Head & _Table & "</div>"
+			    )
+		displayFolder: Presentation\HTML
+		lineageTag: 5ddf47f7-a9be-4b3b-969f-19ae27fc6666
+
+	/// Compute time consumed by BigQuery jobs, from BigQuery's own accounting. The non-dbt twin of dbt Slot Hours, scoped to top-level jobs only so it matches the cost measures. Built from the raw total_slot_ms integer - total_slot_hr is a dateTime cast and cannot be aggregated. This is the metric that matters under slot or reservation pricing, where cost tracks compute time rather than bytes scanned.
+	measure 'Slot Hours' =
+			CALCULATE (
+			    DIVIDE ( SUM ( 'Fact'[total_slot_ms] ), 3600000 ),
+			    KEEPFILTERS ( ISBLANK ( 'Fact'[parent_job_id] ) )
+			)
+		formatString: #,0.00
+		displayFolder: Cost
+		lineageTag: 3f81d4a2-90cb-4e17-b6d5-1c8a7e429f01
+
+	/// Terabytes actually scanned, as opposed to billed. Read against Billed TiB: billed above processed is BigQuery's 10 MB per-query floor and its rounding increment, billed below processed is the result cache reporting bytes it charged nothing for. Top-level jobs only, matching the cost measures.
+	measure 'Processed TiB' =
+			DIVIDE (
+			    CALCULATE (
+			        SUM ( 'Fact'[total_bytes_processed] ),
+			        KEEPFILTERS ( ISBLANK ( 'Fact'[parent_job_id] ) )
+			    ),
+			    POWER ( 1024, 4 )
+			)
+		formatString: #,0.00
+		displayFolder: Cost
+		lineageTag: 7b25c9e0-4a13-48df-8e26-9d0f31c7b5a4
+
+	/// Inline data bar for Billed Amount $ in the Heaviest query patterns grid on Query & Usage Insights. Scales to the visible rows, so it re-normalises when the page is filtered. Mirrors Spend Meter SVG, which does the same job for the dbt grid.
+	measure 'Query Spend Meter SVG' =
+			-- CONFIG
+			VAR _Value = [Billed Amount $]
+			VAR _Fill  = "#2563EB"
+			VAR _Track = "#EEF1F5"
+			
+			-- NORMALIZATION: rescale to the visible rows, with 10% headroom so the widest
+			-- bar never touches the cell edge.
+			VAR _Max     = CALCULATE ( MAXX ( ALLSELECTED ( 'Fact'[queryhash] ), [Billed Amount $] ) )
+			VAR _AxisMax = IF ( _Max > 0, _Max * 1.1, 1 )
+			VAR _BarW    = ROUND ( DIVIDE ( _Value, _AxisMax ) * 100, 0 )
+			
+			-- SVG ELEMENTS
+			VAR _Prefix = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 16' preserveAspectRatio='none'>"
+			VAR _Sort   = "<desc>" & FORMAT ( _Value, "000000000000.00" ) & "</desc>"
+			VAR _TrackR = "<rect x='0' y='5' width='100' height='6' rx='3' fill='" & _Track & "'/>"
+			VAR _BarR   = "<rect x='0' y='5' width='" & MAX ( _BarW, 1 ) & "' height='6' rx='3' fill='" & _Fill & "'/>"
+			VAR _Suffix = "</svg>"
+			
+			RETURN IF ( HASONEVALUE ( 'Fact'[queryhash] ) && _Value > 0, _Prefix & _Sort & _TrackR & _BarR & _Suffix )
+		displayFolder: Presentation\SVG
+		lineageTag: c41d7f68-2b95-4d3a-a0e7-58f24c6b1d93
+		dataCategory: ImageUrl
+
+	/// Cache-state pill for the Heaviest query patterns grid. Colour plus a text label, so the state is never carried by hue alone. Green means this pattern is mostly served from cache and therefore mostly free; grey means it is paid for on every run and is the one worth optimising.
+	measure 'Cache Pill SVG' =
+			-- CONFIG
+			VAR _Queries = [Total Queries]
+			-- COALESCE, not a bare reference. Cache Hit Rate % is DIVIDE ( hits, queries, 0 ),
+			-- and the third argument only fires when the DENOMINATOR is zero or blank - a
+			-- blank numerator over a real denominator still returns BLANK. So a pattern that
+			-- never hit cache reads blank, not 0, and an ISBLANK guard below would suppress
+			-- exactly the "Cold" pill this column exists to show. Verified against the data:
+			-- the three most expensive patterns all returned a blank rate.
+			VAR _Rate    = IF ( _Queries > 0, COALESCE ( [Cache Hit Rate %], 0 ) )
+			
+			VAR _Good  = "#059669"
+			VAR _Warn  = "#D97706"
+			VAR _Cold  = "#64748B"
+			VAR _GoodB = "#D1FAE5"
+			VAR _WarnB = "#FEF3C7"
+			VAR _ColdB = "#EEF1F5"
+			
+			VAR _IsGood = _Rate >= 0.6
+			VAR _IsWarn = NOT _IsGood && _Rate >= 0.3
+			
+			VAR _Fg = IF ( _IsGood, _Good,  IF ( _IsWarn, _Warn,  _Cold ) )
+			VAR _Bg = IF ( _IsGood, _GoodB, IF ( _IsWarn, _WarnB, _ColdB ) )
+			-- Short labels, and the viewBox is 68 wide so "Partial" fits without the glyphs
+			-- running past the pill. The column carries an explicit width in the visual;
+			-- tableEx would otherwise size it to the "Cache" header and squeeze it to a dash.
+			VAR _Text = IF ( _IsGood, "Cached", IF ( _IsWarn, "Partial", "Cold" ) )
+			
+			-- SVG ELEMENTS
+			VAR _Prefix = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 68 22'>"
+			VAR _Sort   = "<desc>" & FORMAT ( _Rate, "0.0000" ) & "</desc>"
+			VAR _Pill   = "<rect x='0' y='1' width='67' height='20' rx='10' fill='" & _Bg & "'/>"
+			VAR _Dot    = "<circle cx='10' cy='11' r='3.5' fill='" & _Fg & "'/>"
+			VAR _Label  = "<text x='18' y='15.5' font-family='Segoe UI, sans-serif' font-size='10.5' font-weight='600' fill='" & _Fg & "'>" & _Text & "</text>"
+			VAR _Suffix = "</svg>"
+			
+			-- ISBLANK guard before anything compares to zero. Cache Hit Rate % returns 0 for
+			-- a pattern that never hit cache, which is a real reading, but it returns BLANK
+			-- where no job matches at all - and BLANK >= 0.6 is FALSE while BLANK = 0 is
+			-- TRUE, so an ungated version labels an empty row "Cold" and keeps it in the grid.
+			RETURN
+			    IF (
+			        HASONEVALUE ( 'Fact'[queryhash] ) && _Queries > 0 && NOT ISBLANK ( _Rate ),
+			        _Prefix & _Sort & _Pill & _Dot & _Label & _Suffix
+			    )
+		displayFolder: Presentation\SVG
+		lineageTag: 8e0a5b37-6c24-4f91-b378-2a9d40e6c815
+		dataCategory: ImageUrl
+
+	/// Markup for the six-card KPI strip at the top of Query & Usage Insights, rendered by the HTML Content visual. Shares its CSS with the DBT Jobs strip - the stylesheet lives on the visual, not here - so the two pages read as one design. Accent colour is semantic: duration, cache and BI Engine flip through good, warn and bad so the colour carries the same signal as the number, and to a muted grey where the rate is not measurable for the selection.
+	measure 'Query KPI Strip HTML' =
+			VAR _Queries  = [Total Queries]
+			VAR _Unique   = [Unique Query Count]
+			VAR _Spend    = [Billed Amount $]
+			VAR _TiB      = [Billed TiB]
+			VAR _AvgDur   = [Average Query Duration (sec)]
+			VAR _Slow     = [Slow Queries (>15s)]
+			VAR _Savings  = [Cache Time Savings (sec)]
+			VAR _BieDur   = [Avg Duration - BI Engine (sec)]
+			VAR _NoBieDur = [Avg Duration - No BI Engine (sec)]
+			VAR _Users    = [Total Users]
+			VAR _PerUser  = [Queries/User]
+			
+			-- CONFIG: semantic accent per card. Duration, cache and BI Engine flip to
+			-- warn/bad so the colour carries the same signal as the number.
+			VAR _cBlue   = "#2563EB"
+			VAR _cViolet = "#7C3AED"
+			VAR _cCyan   = "#0891B2"
+			VAR _cAmber  = "#D97706"
+			VAR _cGood   = "#059669"
+			VAR _cBad    = "#DC2626"
+			VAR _cMuted  = "#64748B"
+			
+			-- A rate can be blank rather than zero when nothing in the selection is
+			-- measurable - no job at all, or none that could have been accelerated. Guard
+			-- for it explicitly before any comparison: BLANK = 0 is TRUE in DAX, so a plain
+			-- "= 0" test would report "nothing slow" and colour the card green. The same
+			-- bug is documented on KPI Strip HTML; do not reintroduce it here either.
+			VAR _NoData = ISBLANK ( _Queries ) || _Queries = 0
+			
+			-- These three are all DIVIDE ( part, [Total Queries] ). DIVIDE only substitutes
+			-- its alternate result when the DENOMINATOR is zero or blank, so a blank
+			-- numerator over a real denominator returns BLANK rather than 0 - a selection
+			-- with no slow query, no cache hit or no accelerated query reads blank, not
+			-- zero. Coalescing here separates "none of them" (a real 0.0%, and for slow
+			-- queries a good one) from "nothing to measure", which _NoData already covers.
+			-- Without it the cards showed an em dash and a muted accent on a healthy
+			-- selection. Verified against the data - see Cache Pill SVG for the same trap.
+			VAR _SlowRate = IF ( NOT _NoData, COALESCE ( [Slow Query Rate %], 0 ) )
+			VAR _Cache    = IF ( NOT _NoData, COALESCE ( [Cache Hit Rate %], 0 ) )
+			VAR _Bie      = IF ( NOT _NoData, COALESCE ( [BI Engine Acceleration Rate %], 0 ) )
+			
+			VAR _DurColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoData || ISBLANK ( _SlowRate ), _cMuted,
+			        _SlowRate <= 0.05, _cGood,
+			        _SlowRate <= 0.15, _cAmber,
+			        _cBad
+			    )
+			VAR _CacheColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoData || ISBLANK ( _Cache ), _cMuted,
+			        _Cache >= 0.6, _cGood,
+			        _Cache >= 0.3, _cAmber,
+			        _cMuted
+			    )
+			VAR _BieColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoData || ISBLANK ( _Bie ), _cMuted,
+			        _Bie >= 0.5, _cGood,
+			        _Bie >= 0.2, _cAmber,
+			        _cMuted
+			    )
+			
+			-- Captions carry the ratio or the counterpart figure that gives the headline
+			-- number its context.
+			VAR _QueryCap = FORMAT ( _Unique, "#,##0" ) & " distinct query patterns"
+			VAR _SpendCap = FORMAT ( _TiB, "#,##0.00" ) & " TiB billed"
+			VAR _DurCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoData, "no queries in this selection",
+			        _Slow = 0, "none ran longer than 15s",
+			        FORMAT ( _SlowRate, "0.0%" ) & " ran longer than 15s"
+			    )
+			VAR _CacheCap =
+			    IF (
+			        ISBLANK ( _Savings ) || _Savings <= 0,
+			        "no measurable time saved",
+			        "saves " & FORMAT ( _Savings, "#,##0.0" ) & "s per query"
+			    )
+			VAR _BieCap =
+			    IF (
+			        ISBLANK ( _BieDur ) || ISBLANK ( _NoBieDur ),
+			        "no accelerated queries to compare",
+			        FORMAT ( _BieDur, "#,##0.0" ) & "s when accelerated, " & FORMAT ( _NoBieDur, "#,##0.0" ) & "s when not"
+			    )
+			VAR _UserCap = FORMAT ( _PerUser, "#,##0.0" ) & " queries per user"
+			
+			-- An em dash rather than "0": no measurable rate and a rate of zero are
+			-- different statements, and FORMAT ( BLANK (), ... ) returns an empty string,
+			-- which renders the card as a bare unit suffix.
+			VAR _DurValue   = IF ( _NoData, "&mdash;", FORMAT ( _AvgDur, "#,##0.0" ) & "<small> s</small>" )
+			VAR _CacheValue = IF ( _NoData || ISBLANK ( _Cache ), "&mdash;", FORMAT ( _Cache, "0.0%" ) )
+			VAR _BieValue   = IF ( _NoData || ISBLANK ( _Bie ), "&mdash;", FORMAT ( _Bie, "0.0%" ) )
+			
+			VAR _Cards =
+			    KpiCard ( 0, _cBlue, "queries", FORMAT ( _Queries, "#,##0" ), _QueryCap )
+			        & KpiCard ( 1, _cViolet, "spend", FORMAT ( _Spend, "$#,##0.00" ), _SpendCap )
+			        & KpiCard ( 2, _DurColor, "avg duration", _DurValue, _DurCap )
+			        & KpiCard ( 3, _CacheColor, "cache hit", _CacheValue, _CacheCap )
+			        & KpiCard ( 4, _BieColor, "bi engine", _BieValue, _BieCap )
+			        & KpiCard ( 5, _cCyan, "users", FORMAT ( _Users, "#,##0" ), _UserCap )
+			
+			RETURN "<div class='strip'>" & _Cards & "</div>"
+		displayFolder: Presentation\HTML
+		lineageTag: a5f9c210-7d38-4b6e-91c2-63e084ab7f15
+
+	/// Active-filter chip row for the Query & Usage Insights header, rendered by the HTML Content visual. Shares the DBT chip CSS. Names the first two filters in full and collapses the rest into a count so the row never overflows. Any slicer added to either tab must be added to the three SWITCH blocks or it will not appear.
+	measure 'Query Filter Chips HTML' =
+			VAR _MaxNamed = 2
+			
+			VAR _Dims =
+			    DATATABLE (
+			        "Ord", INTEGER, "Label", STRING,
+			        { { 1, "Date" }, { 2, "User" }, { 3, "Region" }, { 4, "BI Engine" }, { 5, "Cache" }, { 6, "Environment" }, { 7, "Statement" } }
+			    )
+			
+			VAR _State =
+			    ADDCOLUMNS (
+			        _Dims,
+			        "@On",
+			            SWITCH (
+			                [Label],
+			                "Date",        IF ( ISFILTERED ( dim_Date[Date] ), 1, 0 ),
+			                "User",        IF ( ISFILTERED ( 'Fact'[user_email] ), 1, 0 ),
+			                "Region",      IF ( ISFILTERED ( 'Fact'[region] ), 1, 0 ),
+			                "BI Engine",   IF ( ISFILTERED ( 'Fact'[bie_mode] ), 1, 0 ),
+			                "Cache",       IF ( ISFILTERED ( 'Fact'[Cache State] ), 1, 0 ),
+			                "Environment", IF ( ISFILTERED ( 'Fact'[label_env] ), 1, 0 ),
+			                "Statement",   IF ( ISFILTERED ( 'Fact'[statement_type] ), 1, 0 ),
+			                0
+			            ),
+			        "@Detail",
+			            SWITCH (
+			                [Label],
+			                "User",        CONCATENATEX ( VALUES ( 'Fact'[user_email] ), 'Fact'[user_email], ", " ),
+			                "Region",      CONCATENATEX ( VALUES ( 'Fact'[region] ), 'Fact'[region], ", " ),
+			                "BI Engine",   CONCATENATEX ( VALUES ( 'Fact'[bie_mode] ), 'Fact'[bie_mode], ", " ),
+			                "Cache",       CONCATENATEX ( VALUES ( 'Fact'[Cache State] ), 'Fact'[Cache State], ", " ),
+			                "Environment", CONCATENATEX ( VALUES ( 'Fact'[label_env] ), 'Fact'[label_env], ", " ),
+			                "Statement",   CONCATENATEX ( VALUES ( 'Fact'[statement_type] ), 'Fact'[statement_type], ", " ),
+			                "Date",        FORMAT ( MIN ( dim_Date[Date] ), "d MMM yyyy" ) & " to " & FORMAT ( MAX ( dim_Date[Date] ), "d MMM yyyy" ),
+			                BLANK ()
+			            ),
+			        "@Count",
+			            SWITCH (
+			                [Label],
+			                "User",        COUNTROWS ( VALUES ( 'Fact'[user_email] ) ),
+			                "Region",      COUNTROWS ( VALUES ( 'Fact'[region] ) ),
+			                "BI Engine",   COUNTROWS ( VALUES ( 'Fact'[bie_mode] ) ),
+			                "Cache",       COUNTROWS ( VALUES ( 'Fact'[Cache State] ) ),
+			                "Environment", COUNTROWS ( VALUES ( 'Fact'[label_env] ) ),
+			                "Statement",   COUNTROWS ( VALUES ( 'Fact'[statement_type] ) ),
+			                1
+			            )
+			    )
+			
+			VAR _Active = FILTER ( _State, [@On] = 1 )
+			VAR _N = COUNTROWS ( _Active )
+			
+			-- Name the first few filters in full, then collapse the rest into a count so
+			-- the row never overflows its container.
+			VAR _Named = TOPN ( _MaxNamed, _Active, [Ord], ASC )
+			VAR _Extra = _N - COUNTROWS ( _Named )
+			
+			VAR _Chips =
+			    CONCATENATEX (
+			        _Named,
+			        "<span class='chip'><b>" & [Label] & "</b>"
+			            & IF (
+			                [@Count] > 3 && [Label] <> "Date",
+			                "<em>" & FORMAT ( [@Count], "#,##0" ) & " selected</em>",
+			                IF ( ISBLANK ( [@Detail] ), "", "<em>" & [@Detail] & "</em>" )
+			            )
+			            & "</span>",
+			        "",
+			        [Ord], ASC
+			    )
+			
+			VAR _More = IF ( _Extra > 0, "<span class='chip more'>+" & FORMAT ( _Extra, "#,##0" ) & " more</span>", "" )
+			
+			RETURN
+			    IF (
+			        _N = 0,
+			        "<div class='chips'><span class='chip none'>No filters applied</span></div>",
+			        "<div class='chips'>" & _Chips & _More & "</div>"
+			    )
+		displayFolder: Presentation\HTML
+		lineageTag: d7c34e19-8b05-4a72-95e1-40fb26d8a3c7
+
+	/// Weekday-by-hour activity grid for Query & Usage Insights, rendered as HTML by the HTML Content visual. Answers when the warehouse is actually busy, which no other visual on the page does. Cell fill interpolates the page wash to the primary blue on query count, normalised to the busiest cell in view, so the grid re-scales with the filters. Built as static markup rather than a Deneb heatmap because Deneb loads its Vega runtime per visual and leaves the card blank for two to five seconds on every page show; and rather than a native matrix because a matrix cannot give square cells. Reads Fact[Weekday Order] and Fact[creation_hour_24] directly rather than through dim_Date, so it does not depend on the date relationship being active.
+	measure 'Usage Heatmap HTML' =
+			VAR _Days =
+			    DATATABLE (
+			        "DOrd", INTEGER, "DName", STRING,
+			        { { 1, "Mon" }, { 2, "Tue" }, { 3, "Wed" }, { 4, "Thu" }, { 5, "Fri" }, { 6, "Sat" }, { 7, "Sun" } }
+			    )
+			VAR _Hours = SELECTCOLUMNS ( GENERATESERIES ( 0, 23, 1 ), "HOrd", [Value] )
+			
+			-- One pass over the fact for the whole grid. Summarising first and adding the
+			-- count once is what keeps this to a single storage-engine scan instead of 168.
+			VAR _Counts =
+			    ADDCOLUMNS (
+			        SUMMARIZE ( 'Fact', 'Fact'[Weekday Order], 'Fact'[creation_hour_24] ),
+			        "@N", CALCULATE ( [Total Queries] )
+			    )
+			VAR _Max   = MAXX ( _Counts, [@N] )
+			VAR _Total = SUMX ( _Counts, [@N] )
+			
+			-- CONFIG: the ramp runs page wash to primary blue, the same two colours the
+			-- rest of the page already uses. Interpolated in RGB rather than picked from a
+			-- fixed set of steps, so a busy grid does not band.
+			VAR _R0 = 246 VAR _G0 = 248 VAR _B0 = 250
+			VAR _R1 = 37  VAR _G1 = 99  VAR _B1 = 235
+			
+			VAR _Grid =
+			    CONCATENATEX (
+			        _Days,
+			        VAR _d  = [DOrd]
+			        VAR _dn = [DName]
+			        VAR _DayTotal = SUMX ( FILTER ( _Counts, [Weekday Order] = _d ), [@N] )
+			        VAR _Cells =
+			            CONCATENATEX (
+			                _Hours,
+			                VAR _h = [HOrd]
+			                VAR _n = SUMX ( FILTER ( _Counts, [Weekday Order] = _d && [creation_hour_24] = _h ), [@N] )
+			                -- Square-root ramp. A linear ramp on this data leaves the whole
+			                -- grid near-white except for one or two peak hours, because
+			                -- query volume is heavily skewed towards the working day.
+			                VAR _t = IF ( _Max > 0, SQRT ( DIVIDE ( _n, _Max ) ), 0 )
+			                VAR _rgb =
+			                    "rgb(" & ROUND ( _R0 + ( _R1 - _R0 ) * _t, 0 )
+			                        & "," & ROUND ( _G0 + ( _G1 - _G0 ) * _t, 0 )
+			                        & "," & ROUND ( _B0 + ( _B1 - _B0 ) * _t, 0 ) & ")"
+			                -- Above roughly 55% of peak the cell is dark enough that dark
+			                -- text fails contrast, so the label flips to white.
+			                VAR _fg = IF ( _t > 0.55, "#FFFFFF", "#5B6672" )
+			                RETURN
+			                    "<i class='cell' style='background:" & _rgb & ";color:" & _fg & "' title='"
+			                        & _dn & " " & FORMAT ( _h, "00" ) & ":00 &#8212; " & FORMAT ( _n, "#,##0" ) & " queries'></i>",
+			                ""
+			            )
+			        RETURN
+			            "<div class='row'><span class='rlab'>" & _dn & "</span><div class='cells'>" & _Cells & "</div>"
+			                & "<span class='rtot'>" & FORMAT ( _DayTotal, "#,##0" ) & "</span></div>",
+			        ""
+			    )
+			
+			VAR _HourLabels =
+			    CONCATENATEX (
+			        _Hours,
+			        VAR _h = [HOrd]
+			        -- Every third hour only. All 24 labels at this cell width overlap into
+			        -- an unreadable smear.
+			        RETURN "<i class='hlab'>" & IF ( MOD ( _h, 3 ) = 0, FORMAT ( _h, "00" ), "" ) & "</i>",
+			        ""
+			    )
+			
+			VAR _Legend =
+			    "<div class='legend'><span>Quiet</span><i class='ramp'></i><span>Busy</span>"
+			        & "<span class='peak'>peak " & FORMAT ( _Max, "#,##0" ) & " queries/hour</span></div>"
+			
+			RETURN
+			    IF (
+			        _Total = 0,
+			        "<div class='hm empty'>No queries in this selection</div>",
+			        "<div class='hm'>"
+			            & _Grid
+			            & "<div class='row axis'><span class='rlab'></span><div class='cells'>" & _HourLabels & "</div><span class='rtot'></span></div>"
+			            & _Legend
+			            & "</div>"
+			    )
+		displayFolder: Presentation\HTML
+		lineageTag: f2b60a81-3c47-4d95-8e10-7ad5c9163b28
+
+	/// Tooltip text for the Dimension slicer on the Query & Usage Insights > Explore tab. One brief line per Field Dimension item, keyed on Parameter Order.
+	measure 'About this query dimension' =
+			SWITCH (
+			    SELECTEDVALUE ( 'Field Dimension'[Parameter Order] ),
+			    0, "How BI Engine served the query: FULL means it ran entirely in the in-memory layer, PARTIAL means only part of it did, DISABLED means it did not.",
+			    0.5, "Why BI Engine could not fully accelerate the query. The most common reasons are unsupported SQL and a table larger than the reservation.",
+			    0.7, "Whether BigQuery returned the result from cache. A cache hit scans nothing and costs nothing.",
+			    2, "The date the job was submitted.",
+			    3, "The time of day the job was submitted, to the second.",
+			    3.04, "Day of the week the job was submitted, Monday first.",
+			    3.05, "Hour of the day the job was submitted, 0-23. Use it with Weekday to find the busy window.",
+			    3.06, "Calendar month of submission.",
+			    3.1, "BigQuery's error reason for a failed job, e.g. quotaExceeded or invalidQuery. Blank for jobs that succeeded.",
+			    3.3, "The full error message from a failed job. High cardinality - filter before grouping by it.",
+			    4, "The BigQuery job id. One row per job; use it to trace a single execution.",
+			    4.5, "A hash of the query text, so repeated runs of the same statement group together. This is the grain to use for 'which query costs us most'.",
+			    4.6, "The BigQuery region the job ran in. Price per TiB scanned differs by region.",
+			    4.7, "The kind of SQL the job ran, e.g. SELECT, CREATE_TABLE_AS_SELECT or MERGE. The Performance Analysis tab is pinned to SELECT; this tab is not.",
+			    4.8, "The BigQuery table the job wrote to. Blank for a plain SELECT that returned results to the client.",
+			    4.9, "Size band of the data the job scanned: Tiny, Small, Medium or Large.",
+			    5, "Wall-clock runtime band: 0-1s, 1-5s, 5-15s, 15-60s, 60s+. The 15s boundary matches Slow Queries (>15s).",
+			    7, "The service account or person that submitted the job.",
+			    BLANK ()
+			)
+		isHidden
+		displayFolder: Query\Help
+		lineageTag: 6a13cb75-9e82-4f60-b7d4-21c05e9384fa
+
+	/// Tooltip text for the Metric slicer on the Query & Usage Insights > Explore tab. One brief line per Field Measure item, keyed on Field Measure Order.
+	measure 'About this query metric' =
+			SWITCH (
+			    SELECTEDVALUE ( 'Field Measure'[Field Measure Order] ),
+			    0, "Mean wall-clock seconds per query. Read it with Query >15s % - one slow outlier moves the average a long way.",
+			    1, "Share of queries BI Engine served entirely from its in-memory layer.",
+			    2, "On-demand cost in USD. The rate comes from dim_Region_Cost per region, and only top-level jobs are counted.",
+			    3, "Share of queries that were actually charged for. A low rate is usually healthy: caching and BI Engine are absorbing the load.",
+			    4, "Terabytes billed. On-demand pricing charges per TiB scanned, with a 10 MB floor per query.",
+			    5, "Queries that ran longer than 15 seconds, as a share of all queries.",
+			    6, "Count of queries.",
+			    7, "Count of distinct query patterns, by query hash. Compare with Total Queries to see how much is repeat execution.",
+			    8, "Raw bytes billed, before conversion to TiB.",
+			    9, "Terabytes actually scanned. Above Billed TiB means the cache billed nothing for bytes it still reports; below means the per-query floor and rounding.",
+			    10, "Compute time consumed, from BigQuery's own accounting. The metric that matters under slot or reservation pricing.",
+			    11, "Count of distinct users or service accounts that submitted a job.",
+			    12, "Queries divided by distinct users - broad adoption versus a handful of heavy users.",
+			    13, "Charged queries per distinct user.",
+			    14, "Cost per distinct user, for spotting outlier consumers.",
+			    15, "Jobs that errored. Failures still bill for whatever they scanned before dying.",
+			    16, "Count of queries that ran longer than 15 seconds.",
+			    17, "Average seconds saved by a cache hit - the cache-miss average minus the cache-hit average.",
+			    18, "Mean seconds per query where BigQuery returned the result from cache.",
+			    19, "Mean seconds per query that had to be executed.",
+			    20, "Mean seconds per query BI Engine fully accelerated.",
+			    21, "Mean seconds per query BI Engine did not fully accelerate. Compare with the accelerated figure to size the benefit.",
+			    BLANK ()
+			)
+		isHidden
+		displayFolder: Query\Help
+		lineageTag: 9c0e48d3-5b71-4a26-8fd9-3e17b520ca64
+
+	/// Execution-path pill for the Heaviest query patterns table, rendered by the image column. Names the path most of the pattern's runs took and the share that took it, so a reader never has to know what "cold" or "warm" meant. Replaces Cache Pill SVG, which reported only the cache side and so left BI Engine invisible.
+	measure 'Query Path Pill SVG' =
+			-- CONFIG
+			VAR _Q     = [Total Queries]
+			VAR _Cache = COALESCE ( [Cache Hit Count], 0 )
+			-- FULL and PARTIAL together: the question this column answers is which path
+			-- served the pattern, and a partly accelerated query still went through BI
+			-- Engine. BI Engine Accelerated Count counts only FULL, so it is not enough.
+			VAR _Bie   =
+			    COALESCE (
+			        CALCULATE ( [Total Queries], KEEPFILTERS ( 'Fact'[bie_mode] IN { "FULL", "PARTIAL" } ) ),
+			        0
+			    )
+			-- The remainder, not its own filter: whatever cache and BI Engine did not
+			-- serve was scanned, so the three always sum to _Q however bie_mode grows.
+			VAR _Scan  = _Q - _Cache - _Bie
+			
+			VAR _Top   = MAX ( _Cache, MAX ( _Bie, _Scan ) )
+			VAR _Share = DIVIDE ( _Top, _Q )
+			
+			-- Ties resolve cache first, then BI Engine: both are free paths, and calling a
+			-- 50/50 pattern the cheaper of the two is the reading that matches the bill.
+			VAR _IsCache = _Top = _Cache
+			VAR _IsBie   = NOT _IsCache && _Top = _Bie
+			-- Under half the runs on one path is not a path, it is a mix. Saying "Cache 34%"
+			-- there would read as a cache-served pattern when two thirds of it was not.
+			VAR _IsMixed = _Share < 0.5
+			
+			VAR _Green  = "#059669" VAR _GreenB  = "#D1FAE5"
+			VAR _Cyan   = "#0891B2" VAR _CyanB   = "#CFFAFE"
+			VAR _Slate  = "#64748B" VAR _SlateB  = "#EEF1F5"
+			VAR _Amber  = "#D97706" VAR _AmberB  = "#FEF3C7"
+			
+			VAR _Fg =
+			    SWITCH ( TRUE (), _IsMixed, _Amber, _IsCache, _Green, _IsBie, _Cyan, _Slate )
+			VAR _Bg =
+			    SWITCH ( TRUE (), _IsMixed, _AmberB, _IsCache, _GreenB, _IsBie, _CyanB, _SlateB )
+			VAR _Name =
+			    SWITCH ( TRUE (), _IsMixed, "Mixed", _IsCache, "Cache", _IsBie, "BI Engine", "Full scan" )
+			VAR _Text = _Name & " " & FORMAT ( _Share, "0%" )
+			
+			-- SVG ELEMENTS. The viewBox matches the table's imageWidth/imageHeight of
+			-- 112 x 22 exactly, so nothing stretches.
+			VAR _Prefix = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 112 22'>"
+			VAR _Sort   = "<desc>" & FORMAT ( _Share, "0.0000" ) & "</desc>"
+			VAR _Pill   = "<rect x='0' y='1' width='111' height='20' rx='10' fill='" & _Bg & "'/>"
+			VAR _Dot    = "<circle cx='11' cy='11' r='3.5' fill='" & _Fg & "'/>"
+			VAR _Label  = "<text x='20' y='15.5' font-family='Segoe UI, sans-serif' font-size='10.5' font-weight='600' fill='" & _Fg & "'>" & _Text & "</text>"
+			VAR _Suffix = "</svg>"
+			
+			-- Gate on a single pattern and a real run count. The four path measures are all
+			-- COALESCEd to zero above, so without this an empty row would compute 0/0 and
+			-- render a "Full scan 0%" pill on nothing.
+			RETURN
+			    IF (
+			        HASONEVALUE ( 'Fact'[queryhash] ) && _Q > 0,
+			        _Prefix & _Sort & _Pill & _Dot & _Label & _Suffix
+			    )
+		displayFolder: Presentation\SVG
+		lineageTag: 6a5b13f8-27ce-4d09-b1a4-c8e02f9d5b76
+		dataCategory: ImageUrl
+
+	/// Identity line for the Query pattern drillthrough page - the hash, the statement type, and how much work the pattern accounts for. Blank statement type means the hash covers more than one kind of statement, which happens where the same normalised text is submitted both directly and inside a script.
+	measure 'Query Pattern Caption' =
+			VAR _Hash  = SELECTEDVALUE ( 'Fact'[queryhash] )
+			VAR _Stmt  = SELECTEDVALUE ( 'Fact'[statement_type] )
+			VAR _Runs  = [Total Queries]
+			VAR _Users = [Total Users]
+			RETURN
+			    IF (
+			        HASONEVALUE ( 'Fact'[queryhash] ),
+			        "Pattern " & _Hash
+			            & "   " & UNICHAR ( 183 ) & "   " & IF ( ISBLANK ( _Stmt ), "Mixed statement types", _Stmt )
+			            & "   " & UNICHAR ( 183 ) & "   " & FORMAT ( _Runs, "#,0" ) & IF ( _Runs = 1, " run", " runs" )
+			            & "   " & UNICHAR ( 183 ) & "   " & FORMAT ( _Users, "#,0" ) & IF ( _Users = 1, " user", " users" ),
+			        "No single query pattern in context"
+			    )
+		displayFolder: Query\Detail
+		lineageTag: b5f8fec6-e6ff-43f6-bdc3-2039d054803e
+
+	/// The full SQL text of one query pattern, rendered as a selectable monospace block by the HTML Content visual on the Query pattern drillthrough page. The CSS lives on the visual, not here, matching the other HTML measures. Escapes &, < and > in that order - reversing it would escape the ampersands the later replacements introduce. Trims at 26,000 characters because DAX caps a string at 32,767 and Fact[query] already reaches 32,766, leaving no room for the markup; the trim is reported in the footer rather than hidden.
+	measure 'Query Pattern SQL HTML' =
+			VAR _Sql   = CALCULATE ( MAX ( 'Fact'[query] ) )
+			VAR _Len   = LEN ( _Sql )
+			VAR _Lines = _Len - LEN ( SUBSTITUTE ( _Sql, UNICHAR ( 10 ), "" ) ) + 1
+			VAR _Cap   = 26000
+			VAR _Body  = IF ( _Len > _Cap, LEFT ( _Sql, _Cap ), _Sql )
+			VAR _Esc =
+			    SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _Body, "&", "&amp;" ), "<", "&lt;" ), ">", "&gt;" )
+			VAR _EscAttr =
+			    SUBSTITUTE ( _Esc, "'", "&#39;" )
+			VAR _CopyScript =
+			    "<script>window.zzCopySql=function(b){var s=b.getAttribute('data-sql');" &
+			    "function ok(){b.classList.remove('copyfail');b.classList.add('copied');b.textContent='Copied';setTimeout(function(){b.classList.remove('copied');b.textContent='Copy';},1400);}" &
+			    "function fail(){b.classList.remove('copied');b.classList.add('copyfail');b.textContent='Retry';setTimeout(function(){b.classList.remove('copyfail');b.textContent='Copy';},1800);}" &
+			    "function legacy(){try{var ta=document.createElement('textarea');ta.value=s;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();var r=document.execCommand('copy');document.body.removeChild(ta);return r;}catch(e){return false;}}" &
+			    "if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(s).then(ok,function(){legacy()?ok():fail();});}else{legacy()?ok():fail();}" &
+			    "};</script>"
+			VAR _CopyBtn =
+			    _CopyScript & "<button type='button' class='copybtn' data-sql='" & _EscAttr & "' onclick='window.zzCopySql(this)'>Copy</button>"
+			VAR _Meta =
+			    "<div class='sqlmeta'><span>" & FORMAT ( _Lines, "#,0" ) & IF ( _Lines = 1, " line", " lines" ) & "</span>"
+			        & "<span>" & FORMAT ( _Len, "#,0" ) & " characters</span>"
+			        & _CopyBtn & "</div>"
+			VAR _Note =
+			    IF (
+			        _Len > _Cap,
+			        "<div class='sqltrunc'>Showing the first " & FORMAT ( _Cap, "#,0" )
+			            & " characters. The statement is " & FORMAT ( _Len, "#,0" ) & " characters long.</div>"
+			    )
+			RETURN
+			    IF (
+			        HASONEVALUE ( 'Fact'[queryhash] ) && NOT ISBLANK ( _Sql ),
+			        _Meta & "<pre class='sql'>" & _Esc & "</pre>" & _Note,
+			        "<div class='sqlempty'>Select a single query pattern to see the statement it runs.</div>"
+			    )
+		displayFolder: Presentation\HTML
+		lineageTag: 999f442c-ecdb-4239-9faf-d7e75e52e688
+
+	/// Hover card for the Heaviest query patterns grid, rendered by the HTML Content visual on the Query pattern tooltip page. Shows what the pattern costs and the opening of its SQL - a preview only, clipped by a fade, because the statements run to tens of thousands of characters and a tooltip is a fixed box. The drillthrough page carries the full text. Blank-versus-zero is handled the same way as Query Pattern KPI Strip HTML: a rate is coalesced to zero only where the pattern has runs, so 'none of them were cached' reads 0% and 'nothing to measure' reads an em dash. CSS lives on the visual, matching the other HTML measures.
+	measure 'Query Pattern Tooltip HTML' =
+			VAR _Hash  = SELECTEDVALUE ( 'Fact'[queryhash] )
+			VAR _Stmt  = SELECTEDVALUE ( 'Fact'[statement_type] )
+			VAR _Runs  = [Total Queries]
+			VAR _Spend = [Billed Amount $]
+			VAR _Avg   = [Average Query Duration (sec)]
+			VAR _Sql   = CALCULATE ( MAX ( 'Fact'[query] ) )
+			VAR _Body  = LEFT ( _Sql, 1400 )
+			VAR _Esc =
+			    SUBSTITUTE ( SUBSTITUTE ( SUBSTITUTE ( _Body, "&", "&amp;" ), "<", "&lt;" ), ">", "&gt;" )
+			VAR _Dash = "&#8212;"
+			-- BLANK = 0 is TRUE in DAX, so gate on the run count before trusting a rate.
+			VAR _NoData = ISBLANK ( _Runs ) || _Runs = 0
+			VAR _Cache  = IF ( NOT _NoData, COALESCE ( [Cache Hit Rate %], 0 ) )
+			VAR _Bie    = IF ( NOT _NoData, COALESCE ( [BI Engine Acceleration Rate %], 0 ) )
+			VAR _Head =
+			    "<div class='tt'><div class='tth'>Pattern " & _Hash & "</div>"
+			        & "<div class='ttm'>" & IF ( ISBLANK ( _Stmt ), "Mixed statement types", _Stmt )
+			        & " &middot; " & FORMAT ( _Runs, "#,0" ) & IF ( _Runs = 1, " run", " runs" ) & "</div>"
+			VAR _Kpis =
+			    "<div class='ttk'>"
+			        & "<div class='kk'><span>Spend</span><b>" & IF ( ISBLANK ( _Spend ), _Dash, FORMAT ( _Spend, "$#,0.00" ) ) & "</b></div>"
+			        & "<div class='kk'><span>Avg</span><b>" & IF ( ISBLANK ( _Avg ), _Dash, FORMAT ( _Avg, "#,0.0" ) & "s" ) & "</b></div>"
+			        & "<div class='kk'><span>Cache</span><b>" & IF ( ISBLANK ( _Cache ), _Dash, FORMAT ( _Cache, "0%" ) ) & "</b></div>"
+			        & "<div class='kk'><span>BI Engine</span><b>" & IF ( ISBLANK ( _Bie ), _Dash, FORMAT ( _Bie, "0%" ) ) & "</b></div>"
+			        & "</div>"
+			VAR _Sqlb =
+			    "<div class='ttw'><pre class='ttsql'>" & _Esc & "</pre><div class='ttfade'></div></div>"
+			        & "<div class='tthint'>Right-click the row and choose Drill through for the full statement</div></div>"
+			RETURN
+			    IF ( HASONEVALUE ( 'Fact'[queryhash] ), _Head & _Kpis & _Sqlb )
+		displayFolder: Presentation\HTML
+		lineageTag: b6043e69-08d3-4081-984c-1ab599ceaa6f
+
+	/// Markup for the KPI strip on the Query pattern drillthrough page, rendered by the HTML Content visual. Built from the shared KpiCard function and the same stylesheet as the Query & Usage Insights strip, so a reader arriving by drillthrough sees the same six-card shape they left. Exists rather than a native cardVisual because that visual forces its own precision onto every value at once - it renders Total Queries as 6.0 and Billed Amount $ as $221.1, neither of which matches the measure anywhere else in the report. Follows the same blank-versus-zero discipline as Query KPI Strip HTML: a rate is coalesced to zero only when the pattern actually has runs, so 'none of them were cached' reads as 0.0% while 'nothing to measure' reads as an em dash.
+	measure 'Query Pattern KPI Strip HTML' =
+			VAR _Runs   = [Total Queries]
+			VAR _Users  = [Total Users]
+			VAR _Spend  = [Billed Amount $]
+			VAR _TiB    = [Billed TiB]
+			VAR _AvgDur = [Average Query Duration (sec)]
+			VAR _Slow   = [Slow Queries (>15s)]
+			VAR _Slots  = [Slot Hours]
+			VAR _Proc   = [Processed TiB]
+			
+			VAR _cBlue   = "#2563EB"
+			VAR _cViolet = "#7C3AED"
+			VAR _cCyan   = "#0891B2"
+			VAR _cAmber  = "#D97706"
+			VAR _cGood   = "#059669"
+			VAR _cBad    = "#DC2626"
+			VAR _cMuted  = "#64748B"
+			
+			-- Guard before any comparison: BLANK = 0 is TRUE in DAX, so a plain "= 0" test
+			-- on an empty selection would report nothing slow and colour the card green.
+			-- Same trap as Query KPI Strip HTML and Cache Pill SVG.
+			VAR _NoData = ISBLANK ( _Runs ) || _Runs = 0
+			
+			-- These three are DIVIDE ( part, [Total Queries] ), and DIVIDE only substitutes
+			-- when the DENOMINATOR is blank - a blank numerator over real runs returns
+			-- BLANK, not 0. Coalescing separates "none of them" from "nothing to measure".
+			VAR _SlowRate = IF ( NOT _NoData, COALESCE ( [Slow Query Rate %], 0 ) )
+			VAR _Cache    = IF ( NOT _NoData, COALESCE ( [Cache Hit Rate %], 0 ) )
+			VAR _Bie      = IF ( NOT _NoData, COALESCE ( [BI Engine Acceleration Rate %], 0 ) )
+			
+			VAR _DurColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoData || ISBLANK ( _SlowRate ), _cMuted,
+			        _SlowRate <= 0.05, _cGood,
+			        _SlowRate <= 0.15, _cAmber,
+			        _cBad
+			    )
+			VAR _CacheColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoData || ISBLANK ( _Cache ), _cMuted,
+			        _Cache >= 0.6, _cGood,
+			        _Cache >= 0.3, _cAmber,
+			        _cMuted
+			    )
+			VAR _BieColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoData || ISBLANK ( _Bie ), _cMuted,
+			        _Bie >= 0.5, _cGood,
+			        _Bie >= 0.2, _cAmber,
+			        _cMuted
+			    )
+			
+			VAR _RunCap = FORMAT ( _Users, "#,##0" ) & IF ( _Users = 1, " user submitted it", " users submitted it" )
+			VAR _SpendCap = FORMAT ( _TiB, "#,##0.0000" ) & " TiB billed"
+			VAR _DurCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoData, "no runs in this selection",
+			        _Slow = 0, "none ran longer than 15s",
+			        FORMAT ( _SlowRate, "0.0%" ) & " ran longer than 15s"
+			    )
+			VAR _CacheCap =
+			    IF ( _NoData, "no runs in this selection", "cached runs are billed nothing" )
+			VAR _BieCap =
+			    IF ( _NoData, "no runs in this selection", "acceleration cuts latency and billed bytes" )
+			VAR _SlotCap =
+			    IF ( ISBLANK ( _Proc ), "no compute recorded", FORMAT ( _Proc, "#,##0.0000" ) & " TiB scanned" )
+			
+			VAR _DurValue   = IF ( _NoData, "&mdash;", FORMAT ( _AvgDur, "#,##0.0" ) & "<small> s</small>" )
+			VAR _CacheValue = IF ( _NoData || ISBLANK ( _Cache ), "&mdash;", FORMAT ( _Cache, "0.0%" ) )
+			VAR _BieValue   = IF ( _NoData || ISBLANK ( _Bie ), "&mdash;", FORMAT ( _Bie, "0.0%" ) )
+			VAR _SlotValue  = IF ( ISBLANK ( _Slots ), "&mdash;", FORMAT ( _Slots, "#,##0.00" ) & "<small> hr</small>" )
+			
+			VAR _Cards =
+			    KpiCard ( 0, _cBlue, "runs", FORMAT ( _Runs, "#,##0" ), _RunCap )
+			        & KpiCard ( 1, _cViolet, "spend", FORMAT ( _Spend, "$#,##0.00" ), _SpendCap )
+			        & KpiCard ( 2, _DurColor, "avg duration", _DurValue, _DurCap )
+			        & KpiCard ( 3, _CacheColor, "cache hit", _CacheValue, _CacheCap )
+			        & KpiCard ( 4, _BieColor, "bi engine", _BieValue, _BieCap )
+			        & KpiCard ( 5, _cCyan, "slot hours", _SlotValue, _SlotCap )
+			RETURN
+			    "<div class='strip'>" & _Cards & "</div>"
+		displayFolder: Presentation\HTML
+		lineageTag: b76097cc-a3d3-49c5-a4f6-0528069ebf4e
+
+	/// Test executions dbt recorded but never ran, because the model the test guards was skipped. Their verdict is unknown, not passing - read alongside Tests Executed, which excludes them.
+	measure 'Tests Skipped' =
+			-- The counterpart to Tests Executed. Kept as its own measure rather than folded
+			-- into the executed count: a skipped test is a test whose verdict is unknown, which
+			-- is a different statement from a test that ran and passed. Hiding the skips would
+			-- make a run where one test failed and five never ran look like a single failure.
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] = "Skipped" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: ec857457-578b-459d-93bd-7fc321eaa888
+
+	/// Distinct models this selection tried to build - success, error and skipped together. The denominator for 'built X of Y': on the 28 Jul 13:30 run that reads 3 of 15. Note that at a multi-run grain it equals dbt Models Built whenever every model succeeded at least once in the window, because both count distinct nodes rather than executions.
+	measure 'dbt Models Attempted' =
+			-- DISTINCTCOUNT of node_id, not COUNTROWS, so it pairs correctly with
+			-- [dbt Models Built], which also counts distinct nodes. Counting rows here would
+			-- give "142 of 213" at the grand total - a model rebuilt daily would inflate the
+			-- denominator but not the numerator, making a healthy project look broken.
+			CALCULATE (
+			    DISTINCTCOUNT ( 'dbt_node_executions'[node_id] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Execution
+		lineageTag: b411bf79-009f-41af-8bed-463bb4a7995e
+
+	/// Model and test executions that ended in error or failure, counted together. The Failed half of Nodes Needing Attention - see Nodes Warned and Nodes Skipped for the other two, and dbt Failed Nodes / Tests Failing for the model and test halves on their own.
+	measure 'Nodes Failed' =
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] = "Failed" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: f5fa59af-fb7f-46e6-b9e0-cfe4fd5ad83b
+
+	/// Executions dbt reported as warn - a test whose threshold was breached but which was configured not to block the run. Tests only in practice: dbt models never report warn. Counted apart from Nodes Failed because a warning did not stop anything, and folding the two together hides which failures actually broke the build.
+	measure 'Nodes Warned' =
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] = "Warned" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: ad3d86b6-05d4-428a-9efc-ca42cb5f1503
+
+	/// Models and tests dbt never ran because something upstream failed - the blast radius of a failure rather than a failure itself. The tables these nodes should have written are stale, so a skip is a data problem even though nothing errored.
+	measure 'Nodes Skipped' =
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] = "Skipped" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: ac30a757-9b40-4dd0-94e2-1da95aba3191
+
+	/// Model executions dbt skipped. Filters raw status rather than status_group so it means exactly what dbt recorded on a model row. Pairs with Tests Skipped to split Nodes Skipped into its two halves.
+	measure 'Models Skipped' =
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status] = "skipped" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: bcac6d21-db91-4ef5-aeda-fb55ad7ceca8
+
+	/// Test executions that returned a hard verdict of fail or error. Narrower than Tests Failed, which folds warnings in: use this when the question is what blocked the run, and Tests Warning for what was only flagged.
+	measure 'Tests Failing' =
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] = "Failed" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: bc8971f9-b185-49c2-a3db-74cc4900b10f
+
+	/// Test executions dbt reported as warn. The test found rows it did not like but was configured with severity warn, so the run carried on. Split out from Tests Failed so a warning is never read as a broken build.
+	measure 'Tests Warning' =
+			CALCULATE (
+			    COUNTROWS ( 'dbt_node_executions' ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Test" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] = "Warned" ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: b1032950-afac-418c-a149-10e834e53f1a
+
+	/// Wall-clock seconds summed over every node execution in context, models and tests together, so a failure-detail row shows how long the node ran before it gave up. Unlike dbt Total Runtime (min) this is not restricted to models and is not converted to minutes. A skipped node contributes 0 because dbt records zero rather than null.
+	measure 'Node Runtime (s)' =
+			CALCULATE (
+			    SUM ( 'dbt_node_executions'[total_node_runtime] ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0.00
+		displayFolder: dbt\Execution
+		lineageTag: 76692cf9-1e86-49e7-9916-494b525a3cc1
+
+	/// When the node's warehouse query completed - the moment a failure actually happened, as opposed to when the run that contains it started. Blank on a skipped node, which never reached BigQuery. Reads query_completed_at, which is hidden on the table because it is only meaningful once aggregated like this.
+	measure 'Node Finished At' =
+			CALCULATE (
+			    MAX ( 'dbt_node_executions'[query_completed_at] ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: General Date
+		displayFolder: dbt\Quality
+		lineageTag: e0108d79-3054-4744-972d-aa261687bb0a
+
+	/// Distinct dbt runs in which this node failed, warned or was skipped. The repeat-offender measure: one node failing in six runs is a standing data-quality problem, whereas six nodes failing in one run is a single bad deploy.
+	measure 'Runs Affected' =
+			CALCULATE (
+			    DISTINCTCOUNT ( 'dbt_node_executions'[command_invocation_id] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] IN { "Failed", "Warned", "Skipped" } ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: 94f68d56-12b6-4d20-9b34-ab50b835f340
+
+	/// Start time of the most recent run in which anything failed, warned or was skipped. Blank when the selection is clean, which is the point: an empty cell here means nothing to answer for.
+	measure 'Last Failure At' =
+			CALCULATE (
+			    MAX ( 'dbt_node_executions'[run_started_at] ),
+			    KEEPFILTERS ( 'dbt_node_executions'[status_group] IN { "Failed", "Warned", "Skipped" } ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: General Date
+		displayFolder: dbt\Quality
+		lineageTag: 055ae12c-4e65-42ff-8d9c-c3d0b3e97676
+
+	/// Markup for the six-card KPI strip at the top of the Test & Failure Details page, rendered by the HTML Content visual and sharing the card CSS that lives on that visual. Every card describes a non-success outcome, so the accent is red or amber whenever the number is non-zero and green only when there is genuinely nothing to answer for. Blank and zero are kept distinct throughout: an em dash means no node execution is attributable to the selection, whereas a green zero means nodes ran and came out clean.
+	measure 'Failure KPI Strip HTML' =
+			VAR _Outcomes   = [Run Outcomes]
+			VAR _Attn       = [Nodes Needing Attention]
+			VAR _Health     = [Run Health %]
+			VAR _MdlFailed  = [dbt Failed Nodes]
+			VAR _MdlAttempt = [dbt Models Attempted]
+			VAR _MdlSkip    = [Models Skipped]
+			VAR _TstFailed  = [Tests Failing]
+			VAR _TstRan     = [Tests Executed]
+			VAR _TstSkip    = [Tests Skipped]
+			VAR _TstPass    = [Test Pass Rate %]
+			VAR _Warned     = [Nodes Warned]
+			VAR _Skipped    = [Nodes Skipped]
+			VAR _Rows       = [Failing Rows]
+			VAR _Last       = [Last Failure At]
+			
+			-- CONFIG: the accent is semantic on every card. Green is reserved for a real
+			-- zero, grey for nothing attributable, so colour and number always agree.
+			VAR _cGood  = "#059669"
+			VAR _cAmber = "#D97706"
+			VAR _cBad   = "#DC2626"
+			VAR _cMuted = "#64748B"
+			VAR _cGrey  = "#94A3B8"
+			VAR _Dash   = "&mdash;"
+			
+			-- BLANK = 0 is TRUE in DAX, so every card tests ISBLANK before it tests zero.
+			-- Without that a selection with no attributable node reads as a clean run in
+			-- green, which on a page whose whole job is failures is the worst possible lie.
+			VAR _NoNodes  = ISBLANK ( _Outcomes )
+			VAR _NoModels = ISBLANK ( _MdlAttempt )
+			VAR _NoTests  = ISBLANK ( _TstRan ) && COALESCE ( _TstSkip, 0 ) = 0
+			
+			VAR _AttnN = COALESCE ( _Attn, 0 )
+			VAR _WarnN = COALESCE ( _Warned, 0 )
+			VAR _SkipN = COALESCE ( _Skipped, 0 )
+			VAR _MdlN  = COALESCE ( _MdlFailed, 0 )
+			
+			VAR _AttnValue = IF ( _NoNodes, _Dash, FORMAT ( _AttnN, "#,##0" ) & "<small> / " & FORMAT ( _Outcomes, "#,##0" ) & "</small>" )
+			VAR _AttnColor = IF ( _NoNodes, _cMuted, IF ( _AttnN = 0, _cGood, _cBad ) )
+			VAR _AttnCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoNodes, "no outcome attributable to this selection",
+			        _AttnN = 0, "every node ran and passed",
+			        FORMAT ( DIVIDE ( _AttnN, _Outcomes ), "0.0%" ) & " of outcomes &middot; run health " & FORMAT ( _Health, "0.0%" )
+			    )
+			
+			VAR _MdlValue = IF ( _NoModels, _Dash, FORMAT ( _MdlN, "#,##0" ) )
+			VAR _MdlColor = IF ( _NoModels, _cMuted, IF ( _MdlN = 0, _cGood, _cBad ) )
+			VAR _MdlCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoModels, "no models in this selection",
+			        _MdlN = 0, "all " & FORMAT ( _MdlAttempt, "#,##0" ) & " attempted models built",
+			        "of " & FORMAT ( _MdlAttempt, "#,##0" ) & " attempted &middot; " & FORMAT ( COALESCE ( _MdlSkip, 0 ), "#,##0" ) & " skipped after"
+			    )
+			
+			-- A run can record test rows of which none ran, because dbt writes a row for a
+			-- test it skips. "0 / 6 ran" would be a contradiction, so that case reports the
+			-- skip count instead and turns amber rather than green.
+			VAR _TstValue =
+			    SWITCH (
+			        TRUE (),
+			        _NoTests, _Dash,
+			        ISBLANK ( _TstRan ), "0<small> / " & FORMAT ( _TstSkip, "#,##0" ) & " skipped</small>",
+			        FORMAT ( COALESCE ( _TstFailed, 0 ), "#,##0" ) & "<small> / " & FORMAT ( _TstRan, "#,##0" ) & " ran</small>"
+			    )
+			VAR _TstColor =
+			    SWITCH (
+			        TRUE (),
+			        _NoTests, _cMuted,
+			        ISBLANK ( _TstRan ), _cAmber,
+			        COALESCE ( _TstFailed, 0 ) = 0, _cGood,
+			        _cBad
+			    )
+			VAR _TstCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoTests, "no tests attributable to this selection",
+			        ISBLANK ( _TstRan ), "every test skipped, so nothing was verified",
+			        "pass rate " & FORMAT ( _TstPass, "0.0%" )
+			            & IF ( COALESCE ( _TstSkip, 0 ) > 0, " &middot; " & FORMAT ( _TstSkip, "#,##0" ) & " skipped", "" )
+			    )
+			
+			VAR _WarnValue = IF ( _NoNodes, _Dash, FORMAT ( _WarnN, "#,##0" ) )
+			VAR _WarnColor = IF ( _NoNodes, _cMuted, IF ( _WarnN = 0, _cGood, _cAmber ) )
+			VAR _WarnCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoNodes, "nothing to report",
+			        _WarnN = 0, "nothing flagged short of failure",
+			        "thresholds breached on severity warn, so the run carried on"
+			    )
+			
+			VAR _SkipValue = IF ( _NoNodes, _Dash, FORMAT ( _SkipN, "#,##0" ) )
+			VAR _SkipColor = IF ( _NoNodes, _cMuted, IF ( _SkipN = 0, _cGood, _cGrey ) )
+			VAR _SkipCap =
+			    SWITCH (
+			        TRUE (),
+			        _NoNodes, "nothing to report",
+			        _SkipN = 0, "nothing was skipped",
+			        FORMAT ( COALESCE ( _MdlSkip, 0 ), "#,##0" ) & " models &middot; " & FORMAT ( COALESCE ( _TstSkip, 0 ), "#,##0" ) & " tests skipped upstream"
+			    )
+			
+			VAR _RowsValue = IF ( ISBLANK ( _Rows ), _Dash, FORMAT ( _Rows, "#,##0" ) )
+			VAR _RowsColor = IF ( ISBLANK ( _Rows ), _cMuted, IF ( _Rows = 0, _cGood, _cBad ) )
+			VAR _RowsCap =
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( _Last ), "no failure, warning or skip in this selection",
+			        ISBLANK ( _Rows ), "no test returned rows",
+			        "last break " & FORMAT ( _Last, "dd mmm hh:nn" )
+			    )
+			
+			VAR _Cards =
+			    KpiCard ( 0, _AttnColor, "needs attention", _AttnValue, _AttnCap )
+			        & KpiCard ( 1, _MdlColor, "models failed", _MdlValue, _MdlCap )
+			        & KpiCard ( 2, _TstColor, "tests failed", _TstValue, _TstCap )
+			        & KpiCard ( 3, _WarnColor, "warnings", _WarnValue, _WarnCap )
+			        & KpiCard ( 4, _SkipColor, "skipped", _SkipValue, _SkipCap )
+			        & KpiCard ( 5, _RowsColor, "failing rows", _RowsValue, _RowsCap )
+			
+			RETURN
+			    "<div class='strip'>" & _Cards & "</div>"
+		displayFolder: Presentation\HTML
+		lineageTag: beaaab53-7924-44ce-adfe-50fe48aa40c5
+
+	/// Start time of the node's most recent execution in the current selection. Deliberately ignores any filter on the outcome columns: 'latest' has to mean latest full stop, or a grid scoped to failures would report the last time the node broke and present that as its current state.
+	measure 'Latest Node Run At' =
+			CALCULATE (
+			    MAX ( 'dbt_node_executions'[run_started_at] ),
+			    REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			    REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
+			    REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			)
+		formatString: General Date
+		displayFolder: dbt\Quality
+		lineageTag: 761518e9-550b-4181-b105-059d0fea1080
+
+	/// Raw dbt status of the node's most recent execution - what the node's current state actually is, as opposed to whether it has ever been bad. This is what separates a standing problem from history: a node that failed last week and has built cleanly since reads success here.
+	measure 'Latest Node Outcome' =
+			VAR _Last = [Latest Node Run At]
+			RETURN
+			    CALCULATE (
+			        -- MIN, not MAX. If a node somehow records two statuses at the same instant,
+			        -- alphabetical MIN puts error and fail ahead of skipped, pass and success, so
+			        -- the tie resolves pessimistically. On a fix-this list that is the safe bias:
+			        -- over-reporting a problem costs a look, under-reporting it costs a table.
+			        MIN ( 'dbt_node_executions'[status] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        'dbt_node_executions'[run_started_at] = _Last,
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+		displayFolder: dbt\Quality
+		lineageTag: 7e748698-27ce-410a-99d7-7af2247c63af
+
+	/// Rows returned by the node's most recent execution, when that execution was a failing test. Blank on a model and on a skipped node. Reports the size of the problem as it stands now rather than the total ever accumulated, which Failing Rows gives.
+	measure 'Latest Node Failing Rows' =
+			VAR _Last = [Latest Node Run At]
+			RETURN
+			    CALCULATE (
+			        SUM ( 'dbt_node_executions'[failures] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        'dbt_node_executions'[run_started_at] = _Last,
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+		formatString: #,0
+		displayFolder: dbt\Quality
+		lineageTag: 1d2380c0-6f91-4f1a-acd1-453286d917d4
+
+	/// 1 when the node's most recent execution was anything other than success or pass, blank otherwise. A flag rather than a boolean on purpose: blank rows drop out of a measure filter, which is what lets a visual show only the nodes that are still broken. Filter a table on this being 1 to get the standing fix-list.
+	measure 'Needs Fixing Now' =
+			VAR _Latest = [Latest Node Outcome]
+			RETURN
+			    IF (
+			        NOT ISBLANK ( _Latest )
+			            && NOT ( LOWER ( _Latest ) IN { "success", "pass" } ),
+			        1
+			    )
+		formatString: 0
+		displayFolder: dbt\Quality
+		lineageTag: 52a786d7-0252-4d2a-9a6f-a1cb2aab7031
+
+	/// First eight characters of the dbt invocation that produced the node's most recent execution - which run left the node in the state it is in. Shortened rather than the full 36-character GUID because the fix-list has to fit several columns; the prefix is how Filter Chips HTML and the overview page's Recent runs table both identify a run, so it reads consistently. Reads command_invocation_id off the executions table, not off dbt_invocations, because the relationship only propagates from invocations down to executions.
+	measure 'Latest Node Invocation' =
+			VAR _Last = [Latest Node Run At]
+			RETURN
+			    CALCULATE (
+			        LEFT ( MIN ( 'dbt_node_executions'[command_invocation_id] ), 8 ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
+			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
+			        'dbt_node_executions'[run_started_at] = _Last,
+			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
+			    )
+		displayFolder: dbt\Quality
+		lineageTag: 6d14d1c2-ecc8-4683-8770-ad0aac4ed081
+
+	partition Measure = m
+		mode: import
+		queryGroup: Measure
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WMlSKjQUA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", Int64.Type}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Column1"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

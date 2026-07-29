@@ -1,0 +1,387 @@
+/// One row per dbt node execution - models and tests unioned in SQL, replacing the separate dbt_model_executions table and the dbt_run_health calculated table. Grain is one node execution, keyed by job_id for the join to Fact, which is unique across both branches (verified 269/269). A test row is attributed to the FIRST node it tests, so tests inherit the layer and schema of the model they guard - a test covering several nodes lands on just one of them, and tested_nodes keeps the full list. Test job_id comes from the RAW test_executions table, not stg_dbt__test_executions, because the dbt_artifacts staging model drops adapter_response; the raw table has no test_execution_id so the join is on command_invocation_id plus node_id, verified 1:1 with no duplicate keys. Unlike the old run-health table this one carries cost keys, so test spend is attributable through the same key as models.
+table dbt_node_executions
+	lineageTag: bbb09340-f1d5-4981-b453-d3a6025ff9f4
+
+	/// Whether the row is a Model execution or a Test execution. Every measure that means models only must filter on this - the table holds both.
+	column node_type
+		dataType: string
+		lineageTag: d1ad07d9-6d6b-4051-aebd-ced82a1d8ba0
+		summarizeBy: none
+		sourceColumn: node_type
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Surrogate key from dbt_artifacts: model_execution_id on a model row, test_execution_id on a test row.
+	column node_execution_id
+		dataType: string
+		isHidden
+		lineageTag: b3472c35-adef-4a51-9ab0-891900f534ca
+		summarizeBy: none
+		sourceColumn: node_execution_id
+
+		annotation SummarizationSetBy = Automatic
+
+	/// The dbt run this execution belongs to.
+	column command_invocation_id
+		dataType: string
+		isHidden
+		lineageTag: 57421445-95a5-4683-bc2d-53149916f171
+		summarizeBy: none
+		sourceColumn: command_invocation_id
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Node the outcome is attributed to. For a test, the FIRST node it tests, so tests inherit that model's layer and schema. Joins to dbt_models.
+	column node_id
+		dataType: string
+		isHidden
+		lineageTag: 265c2849-ae88-4068-9940-e7ab9876f413
+		summarizeBy: none
+		sourceColumn: node_id
+
+		annotation SummarizationSetBy = Automatic
+
+	/// The test's own dbt node id, kept because node_id is overwritten with the model the test guards. Blank on model rows.
+	column test_node_id
+		dataType: string
+		isHidden
+		lineageTag: 583d42a2-39e8-474a-bfe0-ea8427629199
+		summarizeBy: none
+		sourceColumn: test_node_id
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Model name, or test name for a test row.
+	column node_name
+		dataType: string
+		lineageTag: e814da5b-ed81-45a9-bd5e-7d666ff5e396
+		summarizeBy: none
+		sourceColumn: node_name
+
+		annotation SummarizationSetBy = Automatic
+
+	/// When the dbt run that contains this execution started.
+	column run_started_at
+		dataType: dateTime
+		lineageTag: 3277a735-2b46-4566-b42b-c4da12d8862f
+		summarizeBy: none
+		sourceColumn: run_started_at
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Run start date, for the relationship to dim_Date.
+	column run_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: b16abdcb-3744-4cac-b144-aaf60dda4741
+		summarizeBy: none
+		sourceColumn: run_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Raw dbt outcome. Models report success/error/skipped, tests report pass/fail/warn/error/skipped. Use status_group when the two need to share a legend.
+	column status
+		dataType: string
+		lineageTag: f832c852-0f3e-4890-bcab-da7e9e9276fe
+		summarizeBy: none
+		sourceColumn: status
+
+		annotation SummarizationSetBy = Automatic
+
+	/// When dbt began compiling this node.
+	column compile_started_at
+		dataType: dateTime
+		isHidden
+		lineageTag: bd2da05a-4c12-454f-896c-793c45d04b3c
+		summarizeBy: none
+		sourceColumn: compile_started_at
+
+		annotation SummarizationSetBy = Automatic
+
+	/// When the node's warehouse query finished.
+	column query_completed_at
+		dataType: dateTime
+		isHidden
+		lineageTag: 45fe2fb3-9feb-4094-a1c4-dc8ec27d1cae
+		summarizeBy: none
+		sourceColumn: query_completed_at
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Wall-clock seconds the node took. Zero, not null, on a skipped node - which is why averages must exclude skips explicitly.
+	column total_node_runtime
+		dataType: double
+		formatString: #,0.00
+		lineageTag: d6e13d28-26f4-4c47-9231-c44b16da0cf9
+		summarizeBy: sum
+		sourceColumn: total_node_runtime
+
+	/// dbt worker thread that ran the node.
+	column thread_id
+		dataType: string
+		isHidden
+		lineageTag: addf7977-9afd-4d35-b506-c48e747ba199
+		summarizeBy: none
+		sourceColumn: thread_id
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Whether the run was invoked with --full-refresh.
+	column was_full_refresh
+		dataType: boolean
+		lineageTag: 19aacd13-d6c5-4c26-b88c-505b9fa28acf
+		summarizeBy: none
+		sourceColumn: was_full_refresh
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Rows the node wrote.
+	column rows_affected
+		dataType: int64
+		lineageTag: c60a7c74-18c9-402a-a51e-9190707b16cf
+		summarizeBy: sum
+		sourceColumn: rows_affected
+
+	/// Bytes the node's query scanned as dbt recorded it. Model rows only - null on tests. Fact is the billing authority; this is the run metadata's own view.
+	column bytes_processed
+		dataType: int64
+		lineageTag: fc6fbaca-f95e-445e-aab8-0d5fd75e821f
+		summarizeBy: sum
+		sourceColumn: bytes_processed
+
+	/// table, view, incremental and so on. Model rows only - null on tests.
+	column materialization
+		dataType: string
+		lineageTag: ce41eb6d-39d5-4883-ac40-8175498aca4b
+		summarizeBy: none
+		sourceColumn: materialization
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Target schema the model wrote to. Model rows only - null on tests, which inherit schema through the node they guard.
+	column schema_name
+		dataType: string
+		lineageTag: a4291a97-5dbd-40d6-bf2e-88c130fb14e2
+		summarizeBy: none
+		sourceColumn: schema_name
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Relation name the model was written as. Model rows only.
+	column alias
+		dataType: string
+		isHidden
+		lineageTag: 4fd18586-f920-4196-a138-16f5defca701
+		summarizeBy: none
+		sourceColumn: alias
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Adapter or test message: what the node did, or why it failed.
+	column message
+		dataType: string
+		lineageTag: b65e26cc-8470-4cd6-b1fe-298b450b1167
+		summarizeBy: none
+		sourceColumn: message
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Failing rows a test returned. Null rather than zero on a model row: a model either builds or errors, so a failure count is not applicable rather than zero. The old run-health table wrote 0 here, which made not-applicable indistinguishable from no-failures.
+	column failures
+		dataType: int64
+		formatString: #,0
+		lineageTag: ad5021d6-5e44-4d08-aea3-ea09c45b1938
+		summarizeBy: sum
+		sourceColumn: failures
+
+	/// Path to the test definition. Test rows only.
+	column test_path
+		dataType: string
+		isHidden
+		lineageTag: 0d858cb5-9d84-4eaf-8cc0-51d750a0286b
+		summarizeBy: none
+		sourceColumn: test_path
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Comma-separated dbt tags on the test. Test rows only.
+	column tags
+		dataType: string
+		lineageTag: 12bd488e-c684-434b-99aa-29eeb7cf64d7
+		summarizeBy: none
+		sourceColumn: tags
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Full comma-separated list of nodes the test covers. node_id carries only the first, so this is where a multi-node test's real coverage is visible.
+	column tested_nodes
+		dataType: string
+		isHidden
+		lineageTag: 30e9372f-8914-465c-9807-4a5b13ba9c01
+		summarizeBy: none
+		sourceColumn: tested_nodes
+
+		annotation SummarizationSetBy = Automatic
+
+	/// BigQuery job id from adapter_response, on the ONE side of the relationship to Fact. COALESCE to a no-job:model: or no-job:test: sentinel because a skipped node never reached BigQuery and has no job id - two nulls on the one side would fail the refresh outright. The two sentinel prefixes cannot collide with each other or with a real job id.
+	column job_id
+		dataType: string
+		isHidden
+		lineageTag: fd5a4399-89cb-49f1-9620-34d228a279d9
+		summarizeBy: none
+		sourceColumn: job_id
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Slot milliseconds as adapter_response reported them.
+	column slot_ms
+		dataType: int64
+		isHidden
+		lineageTag: b6c0a79e-531e-48c9-bf10-0739bb7c84b9
+		summarizeBy: sum
+		sourceColumn: slot_ms
+
+	/// Adapter status code, for example CREATE_TABLE or SELECT.
+	column adapter_code
+		dataType: string
+		isHidden
+		lineageTag: 5feab19a-d73c-4305-86a3-3eec7739975b
+		summarizeBy: none
+		sourceColumn: adapter_code
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sort order for status_group: OK first, then the outcomes that need attention.
+	column status_group_order =
+			VAR s = LOWER ( 'dbt_node_executions'[status] )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        s IN { "success", "pass" }, 1,
+			        s = "skipped", 2,
+			        s = "warn", 3,
+			        s IN { "error", "fail", "failure" }, 4,
+			        5
+			    )
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d3e94fee-3f48-4514-84f1-1306cc7263f8
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sort order for runtime_bucket, so the bands read shortest to longest instead of alphabetically. Not run sorts first.
+	column runtime_bucket_order =
+			VAR s = 'dbt_node_executions'[total_node_runtime]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        'dbt_node_executions'[status] = "skipped", 0,
+			        s < 10, 1,
+			        s < 30, 2,
+			        s < 60, 3,
+			        s < 300, 4,
+			        5
+			    )
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ca4fc1e2-3c99-4c83-adab-2ef6b695cd58
+		summarizeBy: sum
+
+		annotation SummarizationSetBy = Automatic
+
+	/// status collapsed to four outcomes so models and tests can share one legend: OK (success/pass), Failed (error/fail), Warned (warn), Skipped. Colour this, not raw status - dbt uses different words for the same outcome on models versus tests.
+	column status_group =
+			VAR s = LOWER ( 'dbt_node_executions'[status] )
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        s IN { "success", "pass" }, "OK",
+			        s IN { "error", "fail", "failure" }, "Failed",
+			        s = "warn", "Warned",
+			        s = "skipped", "Skipped",
+			        "Other"
+			    )
+		dataType: string
+		lineageTag: b35fee23-617b-422c-9fca-a3da85376f59
+		summarizeBy: none
+		sortByColumn: status_group_order
+
+	/// Runtime band this execution fell into. Bucketed per EXECUTION, not per node, so a model that ran fast once and slow once appears in two bands - which is itself the signal that its runtime is unstable. A skipped node reports total_node_runtime = 0 but did not run at all, so it lands in its own Not run band rather than being counted as the fastest possible execution.
+	column runtime_bucket =
+			VAR s = 'dbt_node_executions'[total_node_runtime]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        'dbt_node_executions'[status] = "skipped", "Not run",
+			        s < 10, "0-10s",
+			        s < 30, "10-30s",
+			        s < 60, "30-60s",
+			        s < 300, "1-5 min",
+			        "5 min+"
+			    )
+		dataType: string
+		lineageTag: 290654b3-3c48-4fc3-bb14-5ac0846c44e6
+		summarizeBy: none
+		sortByColumn: runtime_bucket_order
+
+	partition dbt_node_executions = m
+		mode: import
+		source =
+				let
+				    _base = "`" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix,
+				    _sql =
+				        "WITH raw_test AS (" &
+				        " SELECT command_invocation_id, node_id," &
+				        " JSON_VALUE(adapter_response, '$.job_id') AS job_id," &
+				        " SAFE_CAST(JSON_VALUE(adapter_response, '$.slot_ms') AS INT64) AS slot_ms," &
+				        " JSON_VALUE(adapter_response, '$.code') AS adapter_code" &
+				        " FROM " & _base & "test_executions`" &
+				        ")" &
+				        " SELECT 'Model' AS node_type, e.model_execution_id AS node_execution_id," &
+				        " e.command_invocation_id, e.node_id, CAST(NULL AS STRING) AS test_node_id," &
+				        " e.name AS node_name, e.run_started_at, DATE(e.run_started_at) AS run_date, e.status," &
+				        " e.compile_started_at, e.query_completed_at, e.total_node_runtime, e.thread_id," &
+				        " e.was_full_refresh, e.rows_affected, e.bytes_processed, e.materialization," &
+				        " e.`schema` AS schema_name, e.alias, e.message," &
+				        " CAST(NULL AS INT64) AS failures, CAST(NULL AS STRING) AS test_path," &
+				        " CAST(NULL AS STRING) AS tags, CAST(NULL AS STRING) AS tested_nodes," &
+				        " COALESCE(JSON_VALUE(e.adapter_response, '$.job_id'), CONCAT('no-job:model:', e.model_execution_id)) AS job_id," &
+				        " SAFE_CAST(JSON_VALUE(e.adapter_response, '$.slot_ms') AS INT64) AS slot_ms," &
+				        " JSON_VALUE(e.adapter_response, '$.code') AS adapter_code" &
+				        " FROM " & _base & "stg_dbt__model_executions` e" &
+				        " UNION ALL" &
+				        " SELECT 'Test' AS node_type, e.test_execution_id AS node_execution_id," &
+				        " e.command_invocation_id," &
+				        " COALESCE(t.depends_on_nodes[SAFE_OFFSET(0)], e.node_id) AS node_id," &
+				        " e.node_id AS test_node_id," &
+				        " t.name AS node_name, e.run_started_at, DATE(e.run_started_at) AS run_date, e.status," &
+				        " e.compile_started_at, e.query_completed_at, e.total_node_runtime, e.thread_id," &
+				        " e.was_full_refresh, e.rows_affected, CAST(NULL AS INT64) AS bytes_processed," &
+				        " CAST(NULL AS STRING) AS materialization, CAST(NULL AS STRING) AS schema_name," &
+				        " CAST(NULL AS STRING) AS alias, e.message," &
+				        " e.failures, t.test_path, ARRAY_TO_STRING(t.tags, ', ') AS tags," &
+				        " ARRAY_TO_STRING(t.depends_on_nodes, ', ') AS tested_nodes," &
+				        " COALESCE(r.job_id, CONCAT('no-job:test:', e.test_execution_id)) AS job_id," &
+				        " r.slot_ms, r.adapter_code" &
+				        " FROM " & _base & "stg_dbt__test_executions` e" &
+				        " LEFT JOIN " & _base & "dim_dbt__tests` t ON t.test_execution_id = e.test_execution_id" &
+				        " LEFT JOIN raw_test r ON r.command_invocation_id = e.command_invocation_id AND r.node_id = e.node_id",
+				    _bq = () => Value.NativeQuery(Source_BQ{[Name = bq_project, Kind = "Database"]}[Data], _sql),
+				    _csv = () => fn_ReadSampleCsv("dbt_node_executions.csv", {
+				            {"node_execution_id", type text}, {"command_invocation_id", type text}, {"node_id", type text}, {"node_name", type text},
+				            {"node_type", type text}, {"alias", type text}, {"schema_name", type text}, {"materialization", type text},
+				            {"status", type text}, {"job_id", type text}, {"adapter_code", type text}, {"message", type text},
+				            {"rows_affected", Int64.Type}, {"bytes_processed", Int64.Type}, {"slot_ms", Int64.Type}, {"total_node_runtime", type number},
+				            {"compile_started_at", type datetime}, {"query_completed_at", type datetime}, {"run_started_at", type datetime}, {"run_date", type date},
+				            {"thread_id", type text}, {"was_full_refresh", type logical}, {"tags", type text}, {"test_node_id", type text},
+				            {"test_path", type text}, {"tested_nodes", type text}, {"failures", Int64.Type}
+				    }),
+				    Source = if p_DataSource = "SampleCSV" then _csv() else _bq()
+				in
+				    Source
+

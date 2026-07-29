@@ -1,0 +1,74 @@
+table 'DBT Metric'
+	lineageTag: a5188ba2-f60e-45f7-a2c8-64ebe7d9e361
+
+	/// The metric a user picks in the Explore slicer. Selecting one re-points the value shown against the chosen dimension, so cost, runtime, volume and quality metrics can all be read off the same breakdown.
+	column 'DBT Metric'
+		lineageTag: df8bc079-5585-45c0-bf73-3a197d0b0d79
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'DBT Metric Order'
+
+		relatedColumnDetails
+			groupByColumn: 'DBT Metric Fields'
+
+		annotation SummarizationSetBy = Automatic
+
+	/// The underlying measure each choice maps to. Internal plumbing for the field parameter - not for report use.
+	column 'DBT Metric Fields'
+		isHidden
+		lineageTag: 79bb30c6-c778-43de-b834-91425ba3f8e9
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'DBT Metric Order'
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 3,
+				  "kind": 2
+				}
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Display order of the choices, and the stable key to switch on in DAX. Use this rather than the display column, which is part of a composite key and cannot be read with SELECTEDVALUE.
+	column 'DBT Metric Order'
+		isHidden
+		formatString: 0
+		lineageTag: c54827e4-1cd4-426b-a221-32382424801e
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'DBT Metric' = calculated
+		mode: import
+		source =
+				{
+				    ("Billed $", NAMEOF('Measure'[dbt Billed $]), 0),
+				    ("Billed TiB", NAMEOF('Measure'[dbt Billed TiB]), 1),
+				    ("Slot Hours", NAMEOF('Measure'[dbt Slot Hours]), 2),
+				    ("Share of Total Spend %", NAMEOF('Measure'[dbt Share of Total Spend %]), 3),
+				    ("Cost per Model", NAMEOF('Measure'[Cost per Model]), 4),
+				    ("Min-Billing Waste $", NAMEOF('Measure'[Minimum-Billing Waste $]), 5),
+				    ("BigQuery Jobs", NAMEOF('Measure'[dbt Jobs]), 6),
+				    ("Model Executions", NAMEOF('Measure'[dbt Node Executions]), 7),
+				    ("Models Built", NAMEOF('Measure'[dbt Models Built]), 8),
+				    ("Total Runtime (min)", NAMEOF('Measure'[dbt Total Runtime (min)]), 9),
+				    ("Avg Runtime (s)", NAMEOF('Measure'[dbt Avg Model Runtime (s)]), 10),
+				    ("Longest Runtime (s)", NAMEOF('Measure'[dbt Longest Model (s)]), 11),
+				    ("Rows Written", NAMEOF('Measure'[dbt Rows Written]), 12),
+				    ("Success Rate %", NAMEOF('Measure'[dbt Success Rate %]), 13),
+				    ("Run Health %", NAMEOF('Measure'[Run Health %]), 14),
+				    ("Needing Attention", NAMEOF('Measure'[Nodes Needing Attention]), 15),
+				    ("Tests Executed", NAMEOF('Measure'[Tests Executed]), 16),
+				    ("Tests Failed", NAMEOF('Measure'[Tests Failed]), 17),
+				    ("Failing Rows", NAMEOF('Measure'[Failing Rows]), 18),
+				    ("Test Spend $", NAMEOF('Measure'[Test Spend $]), 19),
+				    ("Models Attempted", NAMEOF('Measure'[dbt Models Attempted]), 20),
+				    ("Models Failed", NAMEOF('Measure'[dbt Failed Nodes]), 21),
+				    ("Tests Skipped", NAMEOF('Measure'[Tests Skipped]), 22),
+				    ("Test Pass Rate %", NAMEOF('Measure'[Test Pass Rate %]), 23),
+				    ("dbt Runs", NAMEOF('Measure'[dbt Invocations]), 24)
+				}
+
+	annotation PBI_Id = ebb93d7d05014252909456871e529f6e
+

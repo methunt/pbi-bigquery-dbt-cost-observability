@@ -1,0 +1,234 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "dfc701677b2846b78f85",
+  "position": {
+    "x": 24,
+    "y": 925,
+    "z": 25000,
+    "height": 442,
+    "width": 1051,
+    "tabOrder": 25000
+  },
+  "visual": {
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Measure"
+                    }
+                  },
+                  "Property": "Recent Runs HTML"
+                }
+              },
+              "queryRef": "Measure.Recent Runs HTML",
+              "nativeQueryRef": "Recent Runs HTML",
+              "displayName": "Recent Runs HTML"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "contentFormatting": [
+        {
+          "properties": {
+            "showRawHtml": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "overrideInlineStyling": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "align": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            },
+            "userSelect": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "hyperlinks": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "noDataMessage": {
+              "expr": {
+                "Literal": {
+                  "Value": "''"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "stylesheet": [
+        {
+          "properties": {
+            "stylesheet": {
+              "expr": {
+                "Literal": {
+                  "Value": "'*{box-sizing:border-box;margin:0;padding:0}\nhtml,body{height:100%;overflow:hidden;background:transparent}\n\n/* No overflow:hidden here. Combined with border-radius it forces a rounded clip,\n   which makes the browser rasterise the whole card into one layer - and the page\n   uses FitToWidth, so that layer then gets resampled and the text goes soft.\n   body already has overflow:hidden, so nothing can spill regardless. */\n.rr{height:100%;display:flex;flex-direction:column;\n  font-family:''Segoe UI Variable Display'',''Segoe UI'',system-ui,sans-serif;\n  background:#FFFFFF;border:1px solid #E3E8EF;border-radius:14px;\n  box-shadow:0 3px 14px rgba(15,23,42,.06);padding:11px 16px 12px}\n\n/* Sizes are px but the sibling cards'' titles are Power BI VCO titles in pt, so\n   13pt/11pt must be written as 17.5px/13px to sit at the same optical weight. */\n.hd{flex:0 0 auto;margin-bottom:8px}\n.ht{font-size:17.5px;line-height:23px;font-weight:600;color:#111827}\n.hs{font-size:13px;line-height:17px;color:#5B6672;\n  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n\n/* This wrapper is the scrollbar fix and it does nothing else. Row heights were\n   previously tuned by arithmetic against the visual''s declared 442px, which was\n   wrong - the usable viewport is smaller than that, so the card overflowed and\n   the HOST div scrolled, which body''s overflow:hidden cannot prevent because the\n   host is outside this document. min-height:0 is required: a flex item defaults\n   to min-height:auto and refuses to shrink below its content, so overflow:hidden\n   alone would never engage. No border-radius here on purpose - a rounded clip is\n   what rasterises a layer and softens text (see the .rr note above); a square\n   clip does not. Rows are still sized to fit, so this should never actually\n   clip - it is the guarantee, not the layout. */\n.tw{flex:1 1 auto;min-height:0;overflow:hidden}\n\n/* Natural height inside .tw, no flex:1 and no height:100% on the table itself.\n   Those used to be here and were counter-productive: Chromium does not\n   redistribute a stretched table box into its rows, so they bought nothing, while\n   height:100% against a parent that overflowed helped push the card past the\n   viewport. Row padding below is what fills the card; any leftover is dead space\n   at the bottom of .tw, which is strictly better than a scrollbar. */\n.t{width:100%;border-collapse:collapse;table-layout:fixed}\n/* Schema takes the extra width so the Execution column starts further right and\n   sits closer to Health, rather than stranded mid-table. */\n.t th:nth-child(1),.t td:nth-child(1){width:17%}\n.t th:nth-child(2),.t td:nth-child(2){width:14%}\n.t th:nth-child(3),.t td:nth-child(3){width:32%}\n.t th:nth-child(4),.t td:nth-child(4){width:16%}\n/* Health took 3% off Schema when the detail line went to 13px: \"1 failed &middot;\n   17 skipped\" is ~132px and 18% left only ~163px of usable width. Schema can\n   afford it - it already wraps to two lines rather than needing the width. */\n.t th:nth-child(5),.t td:nth-child(5){width:21%}\n\n.t th{font-size:11px;line-height:14px;font-weight:600;letter-spacing:.07em;\n  text-transform:uppercase;color:#5B6672;text-align:left;white-space:nowrap;\n  padding:0 10px 7px;border-bottom:1px solid #E3E8EF}\n.t th.h{text-align:right}\n/* Left gutter guarantees separation from Schema even when Schema is truncated. */\n.t th.ex,.t td.ex{padding-left:26px}\n\n/* 9px, and deliberately conservative rather than derived to fill the card. The\n   old 13px came from arithmetic that assumed 349px of usable tbody height and it\n   overflowed in practice, so the budget is now set below what the numbers allow\n   instead of at the limit. Tallest row is driven by the HEALTH cell, not Dbt run:\n   pill 25 + 2 + detail 18 = 45, against Dbt run''s id 20 + sub 18 = 38. That puts\n   the two detail rows at 45+18+1 = 64 and the three plain rows at 38+18+1 = 57,\n   so 5 rows = 302. Any surplus shows as space under the last row, which is fine;\n   .tw clips if this is still optimistic. */\n.t td{padding:9px 10px;border-bottom:1px solid #F1F5F9;vertical-align:middle;overflow:hidden}\n.t tbody tr:last-child td{border-bottom:0}\n.t tbody tr{transition:background .18s ease;\n  animation:rise .5s cubic-bezier(.22,.8,.28,1) backwards;\n  animation-delay:calc(var(--i) * 55ms)}\n.t tbody tr:hover{background:#F8FAFC}\n\n.id{display:block;font-size:15px;line-height:20px;font-weight:600;color:#111827;\n  font-family:''Cascadia Mono'',''Consolas'',ui-monospace,monospace}\n/* Was 10.5px on #94A3B8 and unreadable. Bigger and materially darker - this is the\n   run timestamp, not decoration. */\n.sub{display:block;font-size:13px;line-height:18px;font-weight:500;color:#64748B;\n  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n\n/* Chip and target stay on ONE line. Stacking the target under the chip would make\n   this the tallest cell in the row and push five rows past the fixed 300px box. */\n.cm{display:inline-block;font-size:12.5px;line-height:17px;font-weight:600;\n  padding:3px 9px;border-radius:6px;white-space:nowrap}\n.cm-build{color:#4338CA;background:#EEF2FF;border:1px solid #C7D2FE}\n.cm-run{color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE}\n.cm-test{color:#7C3AED;background:#F5F3FF;border:1px solid #DDD6FE}\n.cm-seed{color:#0F766E;background:#F0FDFA;border:1px solid #99F6E4}\n.cm-snap{color:#B45309;background:#FFFBEB;border:1px solid #FDE68A}\n.cm-other{color:#475569;background:#F1F5F9;border:1px solid #E2E8F0}\n.tg{font-size:12.5px;color:#64748B;margin-left:7px;white-space:nowrap}\n\n/* Schema wraps to a SECOND line instead of truncating at one. Row height is set\n   by the Dbt run cell (id 20 + sub 18 = 38px), so two 18px lines fit inside the\n   existing row - the second line is free space that was already there.\n   overflow-wrap:anywhere is required: schema names are underscore-delimited and\n   CSS treats them as a single unbreakable word, so without it they would never\n   wrap at all. It only breaks when needed, so a name that fits stays on one line.\n   line-clamp:2 caps it at two lines and adds its own ellipsis beyond ~86 chars. */\n.sc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;\n  overflow:hidden;overflow-wrap:anywhere;\n  font-size:13px;line-height:18px;font-weight:500;color:#334155;\n  font-family:''Cascadia Mono'',''Consolas'',ui-monospace,monospace}\n\n/* Explicit line-height rather than the default: at 13.5px the normal line box is\n   ~18.2px, and five of those plus the bar overflow the fixed 300px container. */\n.ex .v{display:block;font-size:15.5px;line-height:21px;font-weight:600;color:#0F172A;\n  font-variant-numeric:tabular-nums}\n.ex .v small{font-size:11.5px;font-weight:500;color:#5B6672}\n.ex .b{display:block;height:4px;max-width:130px;border-radius:2px;\n  background:#EDF1F6;overflow:hidden;margin-top:5px}\n.ex .b i{display:block;height:100%;border-radius:2px;background:#2563EB;\n  animation:grow .75s cubic-bezier(.22,.8,.28,1) backwards;\n  animation-delay:calc(var(--i) * 55ms + 110ms)}\n\n.h{text-align:right}\n.p{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;\n  padding:3px 11px;border-radius:999px;white-space:nowrap}\n.p i{width:7px;height:7px;border-radius:50%;background:currentColor}\n.p.ok{color:#047857;background:#ECFDF5;border:1px solid #A7F3D0}\n.p.no{color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA}\n/* Skipped-but-nothing-failed. Amber, not red: the DAG did not run, but nothing\n   broke either, and folding it into Failed was what made the old single non-OK\n   count read as eighteen breakages. */\n.p.wa{color:#B45309;background:#FFFBEB;border:1px solid #FDE68A}\n/* A STATIC ring, not the 1.8s infinite pulse this used to be. An animation with\n   no end keeps its subtree permanently composited, so the health cell was the one\n   part of the card the browser held as a cached bitmap - and the page is\n   FitToWidth, so that bitmap got resampled instead of re-rendered at the page''s\n   scale, which is what made the pill look soft while the rest stayed sharp (same\n   rasterise-then-resample trap as the .rr note at the top). The entrance\n   animations are safe because they finish and release the layer; this one never\n   did. The ring reads as emphasis without costing a permanent layer. */\n.p.no i{box-shadow:0 0 0 3px rgba(185,28,28,.14)}\n/* Deliberately identical to .sub - 13px/18px, weight 500, #64748B - because this\n   is the failed/skipped split, the number the reader actually came for, and it was\n   previously set at 10px on #94A3B8 like a footnote. nowrap is load-bearing, not\n   cosmetic: the row budget above assumes ONE 18px line, and a four-digit skip\n   count wrapping would add 18px to two rows. td has overflow:hidden for that. */\n.fx{display:block;font-size:13px;line-height:18px;font-weight:500;color:#64748B;\n  margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}\n\n.empty{margin:auto;font-size:13px;color:#94A3B8}\n\n/* Entrance animates transform and the bar width only - never opacity. Power BI\n   restarts CSS animations every time the page is shown, and animation-delay with\n   fill-mode:backwards holds the FROM state for the length of the delay, so a\n   faded-in row would leave the table blank for a moment on every visit. */\n@keyframes rise{from{transform:translateY(8px)}}\n@keyframes grow{from{width:0}}\n@media (prefers-reduced-motion:reduce){\n  .t tbody tr,.ex .b i{animation:none!important}\n}'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "crossFilter": [
+        {
+          "properties": {
+            "enabled": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "top": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "left": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "28d5750503169e0b2688",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Measure"
+              }
+            },
+            "Property": "Recent Runs HTML"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

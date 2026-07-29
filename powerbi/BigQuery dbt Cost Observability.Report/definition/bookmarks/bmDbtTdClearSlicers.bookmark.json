@@ -1,0 +1,206 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.1.0/schema.json",
+  "displayName": "DBT Test Details · clear slicers",
+  "name": "bmDbtTdClearSlicers",
+  "options": {
+    "applyOnlyToTargetVisuals": true,
+    "targetVisualNames": [
+      "td80fdate",
+      "td81fcommand",
+      "td82ftarget",
+      "td83flayer",
+      "td84fschema",
+      "td85fenv",
+      "td86foutcome",
+      "td88finvoc",
+      "td89finvdate"
+    ],
+    "suppressActiveSection": true
+  },
+  "explorationState": {
+    "version": "1.0",
+    "activeSection": "f6a2d81c9b5e470a3d27",
+    "sections": {
+      "f6a2d81c9b5e470a3d27": {
+        "visualContainers": {
+          "td80fdate": {
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "td81fcommand": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "td82ftarget": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "td83flayer": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "td84fschema": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "td85fenv": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "td86foutcome": {
+            "singleVisual": {
+              "visualType": "advancedSlicerVisual",
+              "objects": {
+                "merge": {
+                  "general": [
+                    {
+                      "properties": {}
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "td88finvoc": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "tdbminvoc0000000000a",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dbt_invocations"
+                        }
+                      },
+                      "Property": "command_invocation_id"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {},
+              "activeProjections": {
+                "Values": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dbt_invocations"
+                        }
+                      },
+                      "Property": "command_invocation_id"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "td89finvdate": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "tdbminvdate00000000a",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dbt_invocations"
+                        }
+                      },
+                      "Property": "run_date"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {},
+              "activeProjections": {
+                "Values": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "dbt_invocations"
+                        }
+                      },
+                      "Property": "run_date"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

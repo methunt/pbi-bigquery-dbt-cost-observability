@@ -1,0 +1,17 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "1962ba0c9a7bec3bc426",
+  "position": {
+    "x": 351,
+    "y": 383,
+    "z": 40001,
+    "height": 252,
+    "width": 1048,
+    "tabOrder": 9000
+  },
+  "visualGroup": {
+    "displayName": "Group 1",
+    "groupMode": "ScaleMode"
+  },
+  "parentGroupName": "qx99filterpanel"
+}

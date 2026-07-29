@@ -1,0 +1,51 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+queryGroup Dim
+
+	annotation PBI_QueryGroupOrder = 2
+
+queryGroup Fact
+
+	annotation PBI_QueryGroupOrder = 3
+
+queryGroup Parameter
+
+	annotation PBI_QueryGroupOrder = 0
+
+queryGroup Measure
+
+	annotation PBI_QueryGroupOrder = 1
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["_LastRefreshed","fx_GetJobdetails","Source_BQ","Measure","dim_Date","#Data Processed Category","Fact","#Day Usage","dim_Region_Cost","dbt_invocations","dbt_models","dbt_model_tags","dbt_job_statements","RangeStart","RangeEnd","bq_project","p_DbtMeta_Project","p_DbtMeta_Dataset","p_DbtMeta_Prefix","p_Regions","dbt_node_executions","p_DataSource","p_SampleDataPath","fn_ReadSampleCsv"]
+
+annotation PBI_ProTooling = ["DevMode","MCP-PBIModeling"]
+
+annotation __TEdtr = 1
+
+ref table Measure
+ref table dim_Date
+ref table '#Data Processed Category'
+ref table Fact
+ref table '#Day Usage'
+ref table 'Field Dimension'
+ref table 'Field Measure'
+ref table _LastRefreshed
+ref table dim_Region_Cost
+ref table dbt_invocations
+ref table dbt_models
+ref table dbt_model_tags
+ref table dbt_job_statements
+ref table 'DBT Metric'
+ref table 'DBT Dimension'
+ref table dbt_node_executions
+
+ref cultureInfo en-US
+

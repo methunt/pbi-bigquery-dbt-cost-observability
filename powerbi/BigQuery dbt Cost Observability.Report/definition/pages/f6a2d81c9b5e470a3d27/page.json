@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "f6a2d81c9b5e470a3d27",
+  "displayName": "DBT Jobs · Nodes Failed",
+  "displayOption": "FitToWidth",
+  "height": 2400,
+  "width": 1750,
+  "visibility": "HiddenInViewMode",
+  "visualInteractions": [
+    {
+      "source": "td80fdate",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td81fcommand",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td82ftarget",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td83flayer",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td84fschema",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td85fenv",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td86foutcome",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td88finvoc",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td89finvdate",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td30whenchart",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td31wherechart",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td32whychart",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    },
+    {
+      "source": "td40detail",
+      "target": "td52fixnow",
+      "type": "NoFilter"
+    }
+  ]
+}

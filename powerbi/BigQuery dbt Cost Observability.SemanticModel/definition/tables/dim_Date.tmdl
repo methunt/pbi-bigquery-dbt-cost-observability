@@ -1,0 +1,153 @@
+/// Date dimension table with dates from Jan 1, 2026 to today
+table dim_Date
+	lineageTag: 971f2132-fcd1-4762-a010-2eb62ad8ccc8
+
+	/// Calendar date, one row per day. The single date field every table relates to, so one slicer drives the whole report.
+	column Date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: c9c4eba4-5577-4e73-842a-4d697c296d4b
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Calendar year.
+	column Year
+		dataType: int64
+		lineageTag: 716421d0-f0dc-48e0-812d-a29818ad2220
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Three-letter month abbreviation, sorted by calendar order rather than alphabetically.
+	column MonthName
+		dataType: string
+		lineageTag: 3a5eb1bb-c7cb-4d72-9768-956c2fc28ae3
+		summarizeBy: none
+		sourceColumn: MonthName
+		sortByColumn: Month
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Calendar quarter, Q1 to Q4.
+	column Quarter
+		dataType: string
+		lineageTag: 0d75ae77-fa02-4a14-a66d-6c843d24888a
+		summarizeBy: none
+		sourceColumn: Quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Week number within the year, for week-over-week comparison.
+	column WeekOfYear
+		dataType: int64
+		lineageTag: 14578da2-9725-4ccc-afe0-6254a09eedc8
+		summarizeBy: none
+		sourceColumn: WeekOfYear
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Full weekday name - useful for separating weekday batch load from weekend activity.
+	column DayOfWeek
+		dataType: string
+		lineageTag: 84abd92a-a662-447a-acda-6ac3fe06614a
+		summarizeBy: none
+		sourceColumn: DayOfWeek
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Day number within the month.
+	column Day
+		dataType: int64
+		formatString: 0
+		lineageTag: 768c9000-0abd-4a75-b8a6-e9c495b0b26b
+		summarizeBy: none
+		sourceColumn: Day
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Month number, the sort key behind MonthName.
+	column Month
+		dataType: int64
+		formatString: 0
+		lineageTag: 43bea126-211a-4be3-b098-734c232e6a0d
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Date as a yyyymmdd integer, for stable chronological sorting.
+	column SortDay
+		dataType: int64
+		formatString: 0
+		lineageTag: 24acecb3-d7a1-4da4-8250-140157e298b4
+		summarizeBy: none
+		sourceColumn: SortDay
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_Date = m
+		mode: import
+		queryGroup: Dim
+		source =
+				let
+				    StartDate = #date(2026, 1, 1),
+				    EndDate = Date.From(DateTime.LocalNow()),
+				    DateCount = Duration.Days(EndDate - StartDate) + 1,
+				
+				    Dates = List.Dates(StartDate, DateCount, #duration(1,0,0,0)),
+				    DateTable = Table.FromList(Dates, Splitter.SplitByNothing(), {"Date"}, null, ExtraValues.Error),
+				
+				    AddColumns = Table.AddColumn(
+				        DateTable,
+				        "DateAttributes",
+				        each [
+				            Year = Date.Year([Date]),
+				            Month = Date.Month([Date]),
+				            MonthName = Date.ToText([Date], "MMM"),
+				            Quarter = "Q" & Text.From(Date.QuarterOfYear([Date])),
+				            WeekOfYear = Date.WeekOfYear([Date]),
+				            DayOfWeek = Date.ToText([Date], "dddd"),
+				            Day = Date.Day([Date]),
+				            SortDay = Number.From(Date.ToText([Date], "yyyyMMdd"))
+				        ]
+				    ),
+				
+				    Expanded = Table.ExpandRecordColumn(
+				        AddColumns,
+				        "DateAttributes",
+				        {"Year","Month","MonthName","Quarter","WeekOfYear","DayOfWeek","Day","SortDay"}
+				    ),
+				
+				    FinalTypes = Table.TransformColumnTypes(
+				        Expanded,
+				        {
+				            {"Date", type date},
+				            {"Year", Int64.Type},
+				            {"Month", Int64.Type},
+				            {"WeekOfYear", Int64.Type},
+				            {"Day", Int64.Type},
+				            {"SortDay", Int64.Type}
+				        }
+				    )
+				in
+				    FinalTypes
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

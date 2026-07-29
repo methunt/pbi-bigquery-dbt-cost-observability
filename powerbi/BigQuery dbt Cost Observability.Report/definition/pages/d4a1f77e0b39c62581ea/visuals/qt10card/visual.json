@@ -1,0 +1,190 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "qt10card",
+  "position": {
+    "x": 10,
+    "y": 10,
+    "z": 0,
+    "height": 380,
+    "width": 500,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "htmlContent443BE3AD55E043BF878BED274D3A6865",
+    "query": {
+      "queryState": {
+        "content": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Measure"
+                    }
+                  },
+                  "Property": "Query Pattern Tooltip HTML"
+                }
+              },
+              "queryRef": "Measure.Query Pattern Tooltip HTML",
+              "nativeQueryRef": "Query Pattern Tooltip HTML",
+              "displayName": "Query Pattern Tooltip HTML"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "contentFormatting": [
+        {
+          "properties": {
+            "showRawHtml": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "overrideInlineStyling": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "align": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            },
+            "userSelect": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "hyperlinks": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "noDataMessage": {
+              "expr": {
+                "Literal": {
+                  "Value": "''"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "stylesheet": [
+        {
+          "properties": {
+            "stylesheet": {
+              "expr": {
+                "Literal": {
+                  "Value": "'*{box-sizing:border-box;margin:0;padding:0}\nbody{background:transparent;overflow:hidden}\n.tt{font-family:''Segoe UI Variable Display'',''Segoe UI'',system-ui,sans-serif}\n.tth{font-size:12.5px;line-height:17px;font-weight:600;color:#111827;letter-spacing:-.01em;\n  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n.ttm{font-size:11px;line-height:15px;color:#5B6672;margin-top:1px}\n.ttk{display:flex;gap:6px;margin:9px 0 8px}\n.kk{flex:1 1 0;min-width:0;overflow:hidden;background:#F6F8FA;border:1px solid #E3E8EF;\n  border-radius:9px;padding:5px 7px 6px}\n.kk span{display:block;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;\n  color:#5B6672;white-space:nowrap}\n.kk b{display:block;font-size:14px;font-weight:600;color:#111827;white-space:nowrap;\n  letter-spacing:-.01em;margin-top:1px}\n.ttw{position:relative;height:248px;background:#FBFCFD;border:1px solid #E3E8EF;\n  border-radius:9px;overflow:hidden}\npre.ttsql{font-family:''Cascadia Mono'',''Consolas'',''Courier New'',monospace;font-size:10.5px;line-height:1.5;\n  color:#374151;padding:9px 11px;white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2;\n  height:100%;overflow:hidden}\n.ttfade{position:absolute;left:1px;right:1px;bottom:1px;height:46px;pointer-events:none;\n  background:linear-gradient(180deg,rgba(251,252,253,0) 0%,rgba(251,252,253,.92) 62%,#FBFCFD 100%)}\n.tthint{font-size:10px;line-height:14px;color:#8A94A0;text-align:center;margin-top:7px}'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dropShadow": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "top": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "left": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

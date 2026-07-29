@@ -1,0 +1,49 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "d4a1f77e0b39c62581ea",
+  "displayName": "Query pattern tooltip",
+  "displayOption": "FitToPage",
+  "height": 400,
+  "width": 520,
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "qtfPattern",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Fact"
+              }
+            },
+            "Property": "queryhash"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "Drillthrough"
+      }
+    ]
+  },
+  "pageBinding": {
+    "name": "qtBindPattern",
+    "type": "Tooltip",
+    "parameters": [
+      {
+        "name": "qtParamPattern",
+        "boundFilter": "qtfPattern",
+        "fieldExpr": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Fact"
+              }
+            },
+            "Property": "queryhash"
+          }
+        }
+      }
+    ]
+  },
+  "visibility": "HiddenInViewMode",
+  "type": "Tooltip"
+}

@@ -1,0 +1,41 @@
+{
+  "window_start": "2026-06-01",
+  "window_end": "2026-06-30",
+  "jobs_total": 4894,
+  "jobs_top_level": 4135,
+  "jobs_script_children": 759,
+  "invocations": 92,
+  "node_executions": 2719,
+  "script_statements": 759,
+  "models": 27,
+  "tests": 14,
+  "users": 6,
+  "spend_total": 662.98,
+  "spend_double_counted": 841.14,
+  "spend_dbt": 470.6,
+  "spend_non_dbt": 192.38,
+  "attribution": {
+    "node_metadata": {
+      "usd": 380.74,
+      "jobs": 2577
+    },
+    "node_label": {
+      "usd": 89.7,
+      "jobs": 161
+    },
+    "run_level": {
+      "usd": 0.16,
+      "jobs": 41
+    }
+  },
+  "cache_hits": 170,
+  "cache_hit_pct": 4.1,
+  "waste_gb": 6.42,
+  "failed_nodes": 13,
+  "skipped_nodes": 10,
+  "regions": [
+    "eu",
+    "europe-west3"
+  ],
+  "seed": 20260701
+}

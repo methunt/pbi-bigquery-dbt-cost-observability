@@ -1,0 +1,4 @@
+/// One card in the six-card KPI strip, rendered by the HTML Content visual. Every strip on every page is built from this, so the card's markup exists in one place: change the structure here and all four visuals follow. Takes already-formatted strings rather than measures - the caller decides units, the em dash for "not measurable", and the semantic accent colour. KEEP THE BODY ON ONE LINE: a newline after the => parses as a SemanticError and the function silently stops resolving, which surfaces as "Failed to resolve name 'KpiCard'" against the measures rather than against the function.
+function KpiCard = (idx: INT64, accent: STRING, keyText: STRING, valHtml: STRING, capText: STRING) => "<div class='c' style='--i:" & idx & ";--a:" & accent & "'>" & "<div class='k'>" & keyText & "</div>" & "<div class='m'><div class='v'>" & valHtml & "</div></div>" & "<div class='p'>" & capText & "</div><i class='r'></i></div>"
+	lineageTag: c47a95d3-8be1-4f02-b6ad-1e5307fda92b
+

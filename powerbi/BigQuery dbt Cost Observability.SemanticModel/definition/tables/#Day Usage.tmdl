@@ -1,0 +1,44 @@
+/// Time of day dimension table with hourly granularity
+table '#Day Usage'
+	excludeFromModelRefresh
+	lineageTag: b33f75af-a690-41c4-b26d-d0bb4ce482a3
+
+	/// Hour of the day the job was created, on a 24-hour clock. Join key from the job table.
+	column Hour
+		dataType: int64
+		formatString: 0
+		lineageTag: 5d6be69a-dd05-4985-9524-3898c9b23047
+		summarizeBy: none
+		sourceColumn: Hour
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Coarse part of day - Morning, Afternoon, Evening or Night - for spotting when load is concentrated without reading twenty-four separate bars.
+	column TimeOfDayName
+		dataType: string
+		lineageTag: e37d68d4-a3c7-4769-b1e9-201b38d4d024
+		summarizeBy: none
+		sourceColumn: TimeOfDayName
+
+		annotation SummarizationSetBy = Automatic
+
+	partition '#Day Usage' = m
+		mode: import
+		queryGroup: Dim
+		source =
+				let
+				  Source = Table.FromRows({
+				    {0, "Night"}, {1, "Night"}, {2, "Night"}, {3, "Night"}, {4, "Night"}, {5, "Night"},
+				    {6, "Morning"}, {7, "Morning"}, {8, "Morning"}, {9, "Morning"}, {10, "Morning"}, {11, "Morning"},
+				    {12, "Afternoon"}, {13, "Afternoon"}, {14, "Afternoon"}, {15, "Afternoon"}, {16, "Afternoon"},
+				    {17, "Evening"}, {18, "Evening"}, {19, "Evening"}, {20, "Evening"},
+				    {21, "Night"}, {22, "Night"}, {23, "Night"}
+				  }, {"Hour", "TimeOfDayName"}),
+				  TypeChanged = Table.TransformColumnTypes(Source, {{"Hour", Int64.Type}, {"TimeOfDayName", type text}})
+				in
+				  TypeChanged
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

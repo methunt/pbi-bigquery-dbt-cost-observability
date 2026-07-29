@@ -1,0 +1,44 @@
+relationship e9a1ff22-adbd-159f-d177-d46a3ba81cb3
+	fromColumn: Fact.creation_hour_24
+	toColumn: '#Day Usage'.Hour
+
+relationship f9693961-1c51-d80e-2dc7-6d03caea8b67
+	fromColumn: Fact.DataSizeCategoryID
+	toColumn: '#Data Processed Category'.CategoryID
+
+relationship 3e9a23d9-61fc-80cb-f30c-f04af4714b6c
+	fromColumn: Fact.creation_date
+	toColumn: dim_Date.Date
+
+relationship rel_dbtModelTags_dbtModels
+	crossFilteringBehavior: bothDirections
+	fromColumn: dbt_model_tags.node_id
+	toColumn: dbt_models.node_id
+
+relationship rel_Fact_dimRegionCost
+	fromColumn: Fact.region
+	toColumn: dim_Region_Cost.region
+
+relationship rel_dbtJobStatements_Fact
+	fromColumn: dbt_job_statements.parent_job_id
+	toColumn: Fact.job_id
+
+relationship rel_dbtNodeExec_dbtInvocations
+	fromColumn: dbt_node_executions.command_invocation_id
+	toColumn: dbt_invocations.command_invocation_id
+
+relationship rel_Fact_dbtNodeExec_jobid
+	crossFilteringBehavior: bothDirections
+	fromColumn: Fact.job_id
+	toColumn: dbt_node_executions.job_id
+
+relationship rel_dbtNodeExec_dbtModels
+	crossFilteringBehavior: bothDirections
+	fromColumn: dbt_node_executions.node_id
+	toColumn: dbt_models.node_id
+
+relationship rel_dbtNodeExec_dimDate
+	isActive: false
+	fromColumn: dbt_node_executions.run_date
+	toColumn: dim_Date.Date
+

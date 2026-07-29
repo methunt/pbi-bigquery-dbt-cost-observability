@@ -1,0 +1,128 @@
+/// Child statements of multi-statement SCRIPT jobs, for diagnostics: which step inside an incremental model's script was slow or failed. Their bytes are NOT free - a parent SCRIPT job reports the exact sum of its children's billed bytes, and Fact holds both rows, so any cost measure must filter Fact to top-level jobs (parent_job_id IS BLANK) or it double counts. Use duration_sec and statement_type here; take cost from Fact.
+table dbt_job_statements
+	lineageTag: 96f5a76c-4a3d-403f-8878-348d176a1455
+
+	/// The SCRIPT job this statement belongs to. Join key to Fact[job_id].
+	column parent_job_id
+		dataType: string
+		lineageTag: 83dd8145-c2bd-4466-ae3d-4475df7d7b4b
+		summarizeBy: none
+		sourceColumn: parent_job_id
+
+	/// This statement's own BigQuery job id.
+	column statement_job_id
+		dataType: string
+		lineageTag: c3e60ed8-4cf8-466e-954a-ca3474d88d4d
+		summarizeBy: none
+		sourceColumn: statement_job_id
+
+	/// Kind of statement, e.g. INSERT, MERGE, DROP_TABLE, ALTER_TABLE.
+	column statement_type
+		dataType: string
+		lineageTag: be8727ac-090a-46bf-a569-086a05940e99
+		summarizeBy: none
+		sourceColumn: statement_type
+
+	/// When the statement started.
+	column start_time
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 3d37c2f1-b5ae-412a-b286-e9c9052424c3
+		summarizeBy: none
+		sourceColumn: start_time
+
+	/// When the statement finished.
+	column end_time
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 0469baf3-1095-4157-b5e5-aa88b31aa308
+		summarizeBy: none
+		sourceColumn: end_time
+
+	/// Statement duration in seconds. This is the useful column here - it shows which step of a script dominates.
+	column duration_sec
+		dataType: int64
+		formatString: 0
+		lineageTag: ff73b2f4-ab9f-4d63-83e9-8483b8825c0b
+		summarizeBy: sum
+		sourceColumn: duration_sec
+
+	/// Billed bytes for this child statement. WARNING: child statements DO bill, and the parent SCRIPT job reports the exact sum of its children - verified equal to the byte. So these bytes are ALREADY counted in Fact via the parent, and summing them alongside Fact double counts. summarizeBy is None deliberately. Cost measures must filter Fact to top-level jobs only (parent_job_id IS BLANK).
+	column total_bytes_billed
+		dataType: int64
+		formatString: #,0
+		lineageTag: 91bcdc49-7708-4e31-b950-3a1d3b08e77d
+		summarizeBy: none
+		sourceColumn: total_bytes_billed
+
+	/// Bytes scanned by this child statement. Already included in the parent SCRIPT job's total on Fact - do not aggregate alongside Fact.
+	column total_bytes_processed
+		dataType: int64
+		formatString: #,0
+		lineageTag: 2486d708-247c-43f7-a67f-98f03762e5e3
+		summarizeBy: none
+		sourceColumn: total_bytes_processed
+
+	/// Slot milliseconds for this statement. Informational only.
+	column total_slot_ms
+		dataType: int64
+		formatString: #,0
+		lineageTag: 8e03c10a-3803-4d77-8f23-e59147c2123d
+		summarizeBy: none
+		sourceColumn: total_slot_ms
+
+	/// Error text if this specific statement failed - more precise than the parent script's message.
+	column error_message
+		dataType: string
+		lineageTag: fe7413fa-fd61-4072-a9b0-b3d8ce839d92
+		summarizeBy: none
+		sourceColumn: error_message
+
+	partition dbt_job_statements = m
+		mode: import
+		queryGroup: Dim
+		source = ```
+				let
+				    SqlTemplate =
+				"SELECT
+				  parent_job_id,
+				  job_id AS statement_job_id,
+				  statement_type,
+				  start_time,
+				  end_time,
+				  TIMESTAMP_DIFF(end_time, start_time, SECOND) AS duration_sec,
+				  total_bytes_billed,
+				  total_bytes_processed,
+				  total_slot_ms,
+				  error_result.message AS error_message
+				FROM
+				  __TABLE__ a
+				WHERE
+				  state = 'DONE'
+				  AND parent_job_id IS NOT NULL
+				  AND creation_time >= TIMESTAMP('" & DateTime.ToText(RangeStart, "yyyy-MM-dd HH:mm:ss") & "')
+				  AND creation_time < TIMESTAMP('" & DateTime.ToText(RangeEnd, "yyyy-MM-dd HH:mm:ss") & "')
+				",
+				
+				    Regions = List.Transform(Text.Split(p_Regions, ","), Text.Trim),
+				
+				    Tables = List.Transform(
+				        Regions,
+				        (r) => 
+				            try fx_GetJobdetails(r, SqlTemplate) 
+				            otherwise null
+				    ),
+				
+				    CleanTables = List.RemoveNulls(Tables),
+				
+				    Combined = Table.Combine(CleanTables),
+				    _csv = () => fn_ReadSampleCsv("dbt_job_statements.csv", {
+				            {"statement_job_id", type text}, {"parent_job_id", type text}, {"statement_type", type text}, {"start_time", type datetime},
+				            {"end_time", type datetime}, {"duration_sec", Int64.Type}, {"total_bytes_processed", Int64.Type}, {"total_bytes_billed", Int64.Type},
+				            {"total_slot_ms", Int64.Type}, {"error_message", type text}
+				    }),
+				    Source = if p_DataSource = "SampleCSV" then _csv() else Combined
+				in
+				    Source
+				```
+

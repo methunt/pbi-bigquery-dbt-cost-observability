@@ -1,0 +1,17 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "qx99filterpanel",
+  "position": {
+    "x": 0,
+    "y": 0,
+    "z": 40000,
+    "height": 1420,
+    "width": 1750,
+    "tabOrder": 40000
+  },
+  "visualGroup": {
+    "displayName": "Filter panel",
+    "groupMode": "ScaleMode"
+  },
+  "isHidden": true
+}

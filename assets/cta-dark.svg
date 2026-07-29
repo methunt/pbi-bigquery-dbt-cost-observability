@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 152" width="660" height="152" role="img" aria-label="Open the live report in the Power BI service">
+  <style>
+    /* The sheen and ring are the only motion, and they ride over a button that
+       is already fully drawn - strip the CSS and nothing is lost but polish. */
+    .sheen { animation: sweep 3.8s ease-in-out infinite 1s }
+    .ring  { animation: pulse 2.6s ease-in-out infinite }
+    @keyframes sweep { 0% { transform: translateX(-260px) }
+                       55%,100% { transform: translateX(700px) } }
+    @keyframes pulse { 0%,100% { opacity: .34 } 50% { opacity: .9 } }
+    @media (prefers-reduced-motion: reduce) { .sheen,.ring { animation: none } }
+  </style>
+  <defs>
+    <linearGradient id="btn" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" x2="1">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="btnClip"><rect x="4" y="6" width="652" height="76" rx="16"/></clipPath>
+    <filter id="lift" x="-20%" y="-40%" width="140%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="7"
+                    flood-color="#3B82F6" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- Deliberately no background rect. The full-width banners can paint their
+       own because they span the column, but a 660px button that painted
+       #0D1117 would show as an off-colour box on any GitHub theme whose canvas
+       is not exactly white or #0D1117 - "dark dimmed" being the obvious one.
+       Transparent composites onto whatever the page actually is.
+
+       Everything sits in one translate so the button keeps its own coordinates
+       and only the offset decides how much clear space sits above it. -->
+  <g transform="translate(0,30)">
+    <rect x="4" y="6" width="652" height="76" rx="16" fill="url(#btn)" filter="url(#lift)"/>
+
+    <g clip-path="url(#btnClip)">
+      <rect class="sheen" x="0" y="6" width="150" height="76" fill="url(#gloss)"/>
+    </g>
+
+    <circle class="ring" cx="46" cy="44" r="21" fill="none" stroke="#FFFFFF"
+            stroke-opacity="0.55" stroke-width="2"/>
+    <circle cx="46" cy="44" r="15.5" fill="#FFFFFF" fill-opacity="0.18"/>
+    <path d="M 41 36.5 L 53 44 L 41 51.5 Z" fill="#FFFFFF"/>
+
+    <text x="84" y="42" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21" font-weight="700"
+          fill="#FFFFFF" letter-spacing="-0.2">Open the live report</text>
+    <text x="84" y="63" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12.5"
+          fill="#FFFFFF" fill-opacity="0.88">Power BI service  &#183;  runs in your browser  &#183;  no sign-in, no cloud account</text>
+  </g>
+</svg>

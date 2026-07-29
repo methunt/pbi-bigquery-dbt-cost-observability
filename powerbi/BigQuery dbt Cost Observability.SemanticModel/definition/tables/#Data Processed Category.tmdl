@@ -1,0 +1,75 @@
+/// Data size category dimension
+table '#Data Processed Category'
+	excludeFromModelRefresh
+	lineageTag: 048910e5-305a-4d2e-9eca-63f81cca1719
+
+	/// Sort key for the size bands, smallest to largest. Also the join key from the job table.
+	column CategoryID
+		dataType: int64
+		formatString: 0
+		lineageTag: 0feb2636-1255-4106-ad64-ddae34e726a0
+		summarizeBy: none
+		sourceColumn: CategoryID
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Short name of the size band: Tiny, Small, Medium or Large.
+	column CategoryName
+		dataType: string
+		lineageTag: 23be5595-5955-43c7-adc2-4d0b50cc68d7
+		summarizeBy: none
+		sourceColumn: CategoryName
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Lower bound of the band in bytes, inclusive.
+	column BytesMin
+		dataType: int64
+		formatString: 0
+		lineageTag: afc7251d-f539-4e29-b34b-a9db18ca892d
+		summarizeBy: none
+		sourceColumn: BytesMin
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Upper bound of the band in bytes, exclusive.
+	column BytesMax
+		dataType: int64
+		formatString: 0
+		lineageTag: b5b4821c-cda4-4d71-8f82-3a33bf0e94f9
+		summarizeBy: none
+		sourceColumn: BytesMax
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Human-readable range for the band, sorted smallest to largest. Prefer this over CategoryName on axes and legends.
+	column Description
+		dataType: string
+		lineageTag: 4610d8de-6cb1-4a7e-b62d-6f6e334dfd2b
+		summarizeBy: none
+		sourceColumn: Description
+		sortByColumn: CategoryID
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	partition '#Data Processed Category' = m
+		mode: import
+		queryGroup: Dim
+		source =
+				let
+				  Categories = Table.FromRows({
+				    {1, "Tiny", 0, 1048576, "Less than 1 MB"},
+				    {2, "Small", 1048576, 104857600, "1 MB to 100 MB"},
+				    {3, "Medium", 104857600, 1073741824, "100 MB to 1 GB"},
+				    {4, "Large", 1073741824, 999999999999, "More than 1 GB"}
+				  }, {"CategoryID", "CategoryName", "BytesMin", "BytesMax", "Description"}),
+				  TypeChanged = Table.TransformColumnTypes(Categories, {{"CategoryID", Int64.Type}, {"CategoryName", type text}, {"BytesMin", Int64.Type}, {"BytesMax", Int64.Type}, {"Description", type text}})
+				in
+				  TypeChanged
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

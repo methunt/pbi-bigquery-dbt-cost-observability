@@ -1,0 +1,18 @@
+# Power BI Desktop local state - machine-specific, never useful to a reader.
+# localSettings.json in particular holds the local p_SampleDataPath override, so
+# committing it would push one machine's paths onto everyone else's clone.
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+
+# Desktop writes these next to the project while it has it open.
+*.pbix
+~$*
+
+# Chrome/renderer scratch from scripts/build_assets.py verification
+render/
+__pycache__/
+
+# Raw Power BI Desktop captures. Build input for scripts/build_page_assets.py,
+# which crops Desktop's window chrome off them and writes the committed stills
+# alongside. Keeping both would double the repo for no reader benefit.
+screenshots/_raw/

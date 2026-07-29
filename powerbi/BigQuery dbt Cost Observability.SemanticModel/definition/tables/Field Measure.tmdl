@@ -1,0 +1,74 @@
+table 'Field Measure'
+	lineageTag: 894c8cf7-d14d-44f8-8b9d-10fb3846f3b4
+
+	/// The metric a user picks for the general query-analysis visuals - cost, volume, duration, cache and BI Engine effectiveness.
+	column 'Field Measure'
+		lineageTag: ed245bde-506c-45b3-b537-86b235aa29eb
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Field Measure Order'
+
+		relatedColumnDetails
+			groupByColumn: 'Field Measure Fields'
+
+		annotation SummarizationSetBy = Automatic
+
+	/// The underlying measure each choice maps to. Internal plumbing for the field parameter - not for report use.
+	column 'Field Measure Fields'
+		isHidden
+		lineageTag: 685bf167-22f8-4b01-b4d0-40992d015672
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Field Measure Order'
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 3,
+				  "kind": 2
+				}
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Display order of the choices, and the stable key to switch on in DAX.
+	column 'Field Measure Order'
+		isHidden
+		formatString: 0
+		lineageTag: c5405af3-8380-4d03-b057-d9c2c1968397
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Field Measure' = calculated
+		mode: import
+		source = ```
+				{
+				    ("Avg Query Duration (sec)", NAMEOF('Measure'[Average Query Duration (sec)]), 0),
+				    ("BI Engine Acceleration %", NAMEOF('Measure'[BI Engine Acceleration Rate %]), 1),
+				    ("Billed Amount $", NAMEOF('Measure'[Billed Amount $]), 2),
+				    ("Billed Queries %", NAMEOF('Measure'[Total Billed Queries Rate %]), 3),
+				    ("Billed TiB", NAMEOF('Measure'[Billed TiB]), 3),
+				    ("Cache Hit %", NAMEOF('Measure'[Cache Hit Rate %]), 4),
+				    ("Query >15s %", NAMEOF('Measure'[Slow Query Rate %]), 5),
+				    ("Total Queries", NAMEOF('Measure'[Total Queries]), 6),
+				    ("Total Unique Queries", NAMEOF('Measure'[Unique Query Count]), 7),
+				    ("Billed Bytes", NAMEOF('Measure'[Billed bytes]), 8),
+				    ("Processed TiB", NAMEOF('Measure'[Processed TiB]), 9),
+				    ("Slot Hours", NAMEOF('Measure'[Slot Hours]), 10),
+				    ("Total Users", NAMEOF('Measure'[Total Users]), 11),
+				    ("Queries per User", NAMEOF('Measure'[Queries/User]), 12),
+				    ("Billed Queries per User", NAMEOF('Measure'[Billed Queries/User]), 13),
+				    ("Billed Amount per User $", NAMEOF('Measure'[Billed Amount/User]), 14),
+				    ("Failed Queries", NAMEOF('Measure'[Failed Queries]), 15),
+				    ("Slow Queries (>15s)", NAMEOF('Measure'[Slow Queries (>15s)]), 16),
+				    ("Cache Time Savings (sec)", NAMEOF('Measure'[Cache Time Savings (sec)]), 17),
+				    ("Avg Duration - Cache Hit (sec)", NAMEOF('Measure'[Avg Duration - Cache Hit (sec)]), 18),
+				    ("Avg Duration - Cache Miss (sec)", NAMEOF('Measure'[Avg Duration - Cache Miss (sec)]), 19),
+				    ("Avg Duration - BI Engine (sec)", NAMEOF('Measure'[Avg Duration - BI Engine (sec)]), 20),
+				    ("Avg Duration - No BI Engine (sec)", NAMEOF('Measure'[Avg Duration - No BI Engine (sec)]), 21)
+				}
+				
+				```
+
+	annotation PBI_Id = 2c0e0b0a62f94bb9aaad1a9eec084ff6
+

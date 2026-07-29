@@ -1,0 +1,32 @@
+table _LastRefreshed
+	isHidden
+	lineageTag: a6af3bf0-c7b8-4e20-b06e-b69a5310b02b
+
+	/// UTC timestamp captured when the model last refreshed. Surfaced through the LastRefreshed measure so a reader can tell how current the figures are.
+	column LastRefreshed
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 22b98abf-cbd5-4771-8a31-d7b392b07de4
+		summarizeBy: none
+		sourceColumn: LastRefreshed
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _LastRefreshed = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [LastRefreshed = date], {{ DateTimeZone.RemoveZone(DateTimeZone.FixedUtcNow())}}),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"LastRefreshed", type datetime}})
+				in
+				    #"Changed Type"
+
+	changedProperty = IsHidden
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,70 @@
+table 'Field Dimension'
+	lineageTag: 42922cc0-124e-4410-9e8d-e363bc1ba323
+
+	/// The job attribute a user picks to break down the general query-analysis visuals.
+	column Parameter
+		lineageTag: f2d8feb6-8a3d-4070-9198-6fbc4e66f99d
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Parameter Order'
+
+		relatedColumnDetails
+			groupByColumn: 'Parameter Fields'
+
+		annotation SummarizationSetBy = Automatic
+
+	/// The underlying field each choice maps to. Internal plumbing for the field parameter - not for report use.
+	column 'Parameter Fields'
+		isHidden
+		lineageTag: 5e34753d-7434-4878-9ae8-96b64861342c
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Parameter Order'
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 3,
+				  "kind": 2
+				}
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Display order of the choices, and the stable key to switch on in DAX.
+	column 'Parameter Order'
+		isHidden
+		formatString: 0
+		lineageTag: 1119be51-7e05-4dcc-95a9-ebcfb36aaba7
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Field Dimension' = calculated
+		mode: import
+		source = ```
+				{
+				    ("Bi Engine Mode", NAMEOF('Fact'[bie_mode]), 0),
+				    ("BI Engine Reason", NAMEOF('Fact'[bie_error_reason]), 0.5),
+				    ("Cache Hit", NAMEOF('Fact'[Cache State]), 0.7),
+				    ("Creation Date", NAMEOF('Fact'[creation_date]), 2),
+				    ("Creation Time", NAMEOF('Fact'[creation_time]), 3),
+				    ("Weekday", NAMEOF('Fact'[Weekday]), 3.04),
+				    ("Hour of Day", NAMEOF('Fact'[creation_hour_24]), 3.05),
+				    ("Month", NAMEOF('dim_Date'[MonthName]), 3.06),
+				    ("Failed Query Code", NAMEOF('Fact'[error_reason]), 3.1),
+				    --("Error Location", NAMEOF('Fact'[error_location]), 3.2),
+				    ("Failed Query Detail", NAMEOF('Fact'[error_message]), 3.3),
+				    ("Job ID", NAMEOF('Fact'[job_id]), 4),
+				    ("Query Hash", NAMEOF('Fact'[queryhash]), 4.5),
+				    ("Region", NAMEOF('Fact'[region]), 4.6),
+				    ("Statement Type", NAMEOF('Fact'[statement_type]), 4.7),
+				    ("Target Table", NAMEOF('Fact'[destination_table_id]), 4.8),
+				    ("Data Scanned Band", NAMEOF('#Data Processed Category'[Description]), 4.9),
+				    ("Runtime Band", NAMEOF('Fact'[Runtime Band]), 5),
+				    ("User", NAMEOF('Fact'[user_email]), 7)
+				}
+				
+				```
+
+	annotation PBI_Id = ee754182342c4f67be705aed49e75785
+

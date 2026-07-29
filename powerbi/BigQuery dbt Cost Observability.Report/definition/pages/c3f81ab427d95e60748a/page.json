@@ -1,0 +1,9 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "c3f81ab427d95e60748a",
+  "displayName": "DBT Jobs · Explore",
+  "displayOption": "FitToWidth",
+  "height": 1420,
+  "width": 1750,
+  "visibility": "HiddenInViewMode"
+}

@@ -1,0 +1,142 @@
+/// One row per dbt model, deduped to its latest definition. The dbt_artifacts source holds one row per model per invocation, so it is reduced here to the most recent row per node - which also means a model that has since been removed from the project keeps its last known definition. Attributes are therefore current-state (Type 1): historical executions are described by today's materialization and tags.
+table dbt_models
+	lineageTag: 737d3740-3fda-4cd7-8365-9d795fa159a2
+
+	/// dbt unique node id, in the form model.<project_name>.<model_name>.
+	column node_id
+		dataType: string
+		lineageTag: dbdfc142-5ec0-409b-8995-0b854b1b2f05
+		summarizeBy: none
+		sourceColumn: node_id
+
+	/// Model name. Matches the model_name job label on BigQuery jobs.
+	column model_name
+		dataType: string
+		lineageTag: 874d9235-b577-439d-a651-7aa8b9830174
+		summarizeBy: none
+		sourceColumn: model_name
+
+	/// Target GCP project for the model's relation.
+	column database_name
+		dataType: string
+		lineageTag: 97e992de-7187-4670-a443-d2fcc3ae290e
+		summarizeBy: none
+		sourceColumn: database_name
+
+	/// Target dataset for the model's relation.
+	column schema_name
+		dataType: string
+		lineageTag: baa860ae-d5bf-4879-8760-18fe19277d34
+		summarizeBy: none
+		sourceColumn: schema_name
+
+	/// dbt package the model belongs to - the project itself, or an installed package such as dbt_artifacts.
+	column package_name
+		dataType: string
+		lineageTag: 9e5bb05f-9975-467d-a45b-932ea98158b6
+		summarizeBy: none
+		sourceColumn: package_name
+
+	/// Path of the model file relative to the models directory.
+	column path
+		dataType: string
+		lineageTag: ebc23cb0-7d0f-4aba-8b66-3fddc762c26a
+		summarizeBy: none
+		sourceColumn: path
+
+	/// Content hash of the model SQL. Changes when the model is edited.
+	column checksum
+		dataType: string
+		lineageTag: 3169103a-e1da-483f-87f5-99558884dffc
+		summarizeBy: none
+		sourceColumn: checksum
+
+	/// How the model is built: table, view, incremental, ephemeral, or a custom materialization. Views are normally free to build - CREATE VIEW is a metadata-only operation - so a project's view layers cost nothing to rebuild.
+	column materialization
+		dataType: string
+		lineageTag: 3a2af216-d153-4875-9ab2-ceff16300c5e
+		summarizeBy: none
+		sourceColumn: materialization
+
+	/// Physical relation name, which is what appears as a job's destination table.
+	column alias
+		dataType: string
+		lineageTag: bc441e31-ca32-4031-8be4-2f93508ca179
+		summarizeBy: none
+		sourceColumn: alias
+
+	/// Comma-separated dbt tags, for display only. Use the dbt_model_tags bridge for filtering: a model can carry several tags, so tag-based totals are not additive.
+	column tags
+		dataType: string
+		lineageTag: 7a43e81a-a379-4e60-9c66-422d4110323f
+		summarizeBy: none
+		sourceColumn: tags
+
+	/// JSON of the model's meta config, as declared in the project's YAML.
+	column meta
+		dataType: string
+		lineageTag: 1aa683a5-57e8-4acd-b836-0381a3576cc5
+		summarizeBy: none
+		sourceColumn: meta
+
+	/// Top-level folder under models/, i.e. however the project organises its layers. Single-valued per model, so cost or runtime broken out by layer is additive and sums to the total - unlike tags, where a model can carry several and any tag breakdown double counts. '(root)' means the model sits directly in models/ with no folder, which is typical of installed packages. Combine with package_name to separate the project's own models from package ones.
+	column layer
+		dataType: string
+		lineageTag: 99b21a9a-711a-4489-a144-b3ecd127c89c
+		summarizeBy: none
+		sourceColumn: layer
+
+	/// Second folder level under models/. BLANK when the model sits directly in its layer folder rather than in a subfolder.
+	column sublayer
+		dataType: string
+		lineageTag: c3dd1d84-35c3-4dd1-8ba8-a3c9b9b6646c
+		summarizeBy: none
+		sourceColumn: sublayer
+
+	/// Number of nodes this model depends on. A rough proxy for how much a rebuild of this model cascades.
+	column upstream_count
+		dataType: int64
+		formatString: 0
+		lineageTag: 6c100809-f0af-4d2a-aade-343980a44621
+		summarizeBy: sum
+		sourceColumn: upstream_count
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dbt_models = m
+		mode: import
+		queryGroup: Dim
+		source =
+				let
+				    _sql =
+				        "WITH latest AS (" &
+				        "  SELECT * FROM `" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix & "dim_dbt__models`" &
+				        "  QUALIFY ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY run_started_at DESC) = 1" &
+				        ")" &
+				        " SELECT node_id, name AS model_name, `database` AS database_name, `schema` AS schema_name," &
+				        " package_name, path, checksum, materialization, alias," &
+				        " ARRAY_TO_STRING(tags, ', ') AS tags," &
+				        " TO_JSON_STRING(meta) AS meta," &
+				        // path is like 'models\staging\ci\base\base_ci_site.sql'. CHR(92) is a backslash - using
+				        // CHR avoids escaping one through JSON -> M -> SQL. Segment 0 is always 'models', so the
+				        // real layer is segment 1 and the sublayer segment 2. A segment ending in .sql means the
+				        // model sits directly in that folder, so there is no sublayer.
+				        " CASE WHEN REGEXP_CONTAINS(IFNULL(SPLIT(REPLACE(path, CHR(92), '/'), '/')[SAFE_OFFSET(1)], ''), r'\.sql$')" &
+				        "      THEN '(root)'" &
+				        "      ELSE SPLIT(REPLACE(path, CHR(92), '/'), '/')[SAFE_OFFSET(1)] END AS layer," &
+				        " CASE WHEN REGEXP_CONTAINS(IFNULL(SPLIT(REPLACE(path, CHR(92), '/'), '/')[SAFE_OFFSET(2)], ''), r'\.sql$')" &
+				        "      THEN NULL" &
+				        "      ELSE SPLIT(REPLACE(path, CHR(92), '/'), '/')[SAFE_OFFSET(2)] END AS sublayer," &
+				        " ARRAY_LENGTH(depends_on_nodes) AS upstream_count" &
+				        " FROM latest",
+				    _bq = () => Value.NativeQuery(Source_BQ{[Name = bq_project, Kind = "Database"]}[Data], _sql, null, [EnableFolding = true]),
+				    _csv = () => fn_ReadSampleCsv("dbt_models.csv", {
+				            {"node_id", type text}, {"model_name", type text}, {"alias", type text}, {"layer", type text},
+				            {"sublayer", type text}, {"materialization", type text}, {"schema_name", type text}, {"database_name", type text},
+				            {"package_name", type text}, {"path", type text}, {"checksum", type text}, {"tags", type text},
+				            {"meta", type text}, {"upstream_count", Int64.Type}
+				    }),
+				    Source = if p_DataSource = "SampleCSV" then _csv() else _bq()
+				in
+				    Source
+

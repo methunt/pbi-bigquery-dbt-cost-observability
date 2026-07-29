@@ -1,0 +1,68 @@
+table 'DBT Dimension'
+	lineageTag: 1031be23-265b-4250-ab8e-e5fa97ee767e
+
+	/// The dimension name a user picks in the Explore slicer. Selecting one re-points every dimension-driven visual on the page at that field, so a single grid can slice dbt spend by model, layer, target table, environment, user or run.
+	column 'DBT Dimension'
+		lineageTag: 7716c829-1f44-4d3c-b879-3a3421097658
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'DBT Dimension Order'
+
+		relatedColumnDetails
+			groupByColumn: 'DBT Dimension Fields'
+
+		annotation SummarizationSetBy = Automatic
+
+	/// The underlying field each choice maps to. Internal plumbing for the field parameter - not for report use.
+	column 'DBT Dimension Fields'
+		isHidden
+		lineageTag: e9662d92-289c-42d4-8cb4-12f732691a88
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'DBT Dimension Order'
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 3,
+				  "kind": 2
+				}
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Display order of the choices, and the stable key to switch on in DAX. Use this rather than the display column, which is part of a composite key and cannot be read with SELECTEDVALUE.
+	column 'DBT Dimension Order'
+		isHidden
+		formatString: 0
+		lineageTag: 5cccf410-af4b-49cc-bfc0-1c068ec4792c
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'DBT Dimension' = calculated
+		mode: import
+		source =
+				{
+				    ("Layer", NAMEOF('dbt_models'[layer]), 0),
+				    ("Sublayer", NAMEOF('dbt_models'[sublayer]), 1),
+				    ("Schema", NAMEOF('dbt_models'[schema_name]), 2),
+				    ("Model Name", NAMEOF('dbt_models'[model_name]), 3),
+				    ("Materialization", NAMEOF('dbt_models'[materialization]), 4),
+				    ("Package", NAMEOF('dbt_models'[package_name]), 5),
+				    ("Tag", NAMEOF('dbt_model_tags'[tag]), 6),
+				    ("Runtime Band", NAMEOF('dbt_node_executions'[runtime_bucket]), 7),
+				    ("Node Status", NAMEOF('dbt_node_executions'[status]), 8),
+				    ("Target Table", NAMEOF('Fact'[destination_table_id]), 9),
+				    ("Statement Type", NAMEOF('Fact'[statement_type]), 10),
+				    ("Resource Type", NAMEOF('Fact'[label_resource_type]), 11),
+				    ("Environment", NAMEOF('Fact'[label_env]), 12),
+				    ("Region", NAMEOF('Fact'[region]), 13),
+				    ("User", NAMEOF('Fact'[user_email]), 14),
+				    ("dbt Project", NAMEOF('dbt_invocations'[project_name]), 15),
+				    ("Target", NAMEOF('dbt_invocations'[target_name]), 16),
+				    ("dbt Command", NAMEOF('dbt_invocations'[dbt_command]), 17),
+				    ("Run", NAMEOF('Fact'[dbt Run]), 18)
+				}
+
+	annotation PBI_Id = 98b5d599fcae42d4abf73fe5636763e1
+

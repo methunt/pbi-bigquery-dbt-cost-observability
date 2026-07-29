@@ -1,0 +1,47 @@
+/// BigQuery on-demand query pricing per region, in USD per TiB of billed bytes. Cost measures look up the rate for each job's region and fall back to the row flagged is_default when a region is not listed. Edit rows here to correct a rate or add a region - no DAX change required. On-demand pricing only: it does not model slot/reservation billing, where cost is not a function of bytes.
+table dim_Region_Cost
+	lineageTag: dadafb69-07a2-4d68-adbb-071e0ffb15c2
+
+	/// BigQuery region, matching the region recorded on each job. The row flagged is_default supplies the fallback rate for any region not listed here.
+	column region
+		dataType: string
+		lineageTag: d6941141-412f-4223-b880-8adf6a3c198d
+		summarizeBy: none
+		sourceColumn: region
+
+	/// On-demand price in USD per TiB of billed bytes for this region.
+	column usd_per_tib
+		dataType: double
+		formatString: \$#,0.000
+		lineageTag: 942e3db5-6850-4178-a906-5062a2b5b521
+		summarizeBy: none
+		sourceColumn: usd_per_tib
+
+	/// Marks the single fallback row used when Fact[region] has no matching rate.
+	column is_default
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: fe7b31ca-70ff-4110-a030-b790139da896
+		summarizeBy: none
+		sourceColumn: is_default
+
+	partition dim_Region_Cost = m
+		mode: import
+		queryGroup: Dim
+		source =
+				let
+				    Source = #table(
+				        type table [region = text, usd_per_tib = number, is_default = logical],
+				        {
+				            {"europe-west3", 8.125, false},
+				            {"eu",           6.125, false},
+				            {"DEFAULT",      6.125, true}
+				        }
+				    )
+				in
+				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
