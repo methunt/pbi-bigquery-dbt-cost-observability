@@ -87,7 +87,7 @@ def hero(p: dict, s: dict) -> str:
     # everything else running on the warehouse.
     kpis = [
         (f"${s['spend_total']:,.2f}", "billed across one month", "primary"),
-        (f"{s['jobs_total']:,}", "BigQuery jobs, every statement type", "cyan"),
+        (f"{s['jobs_total']:,}", "BigQuery jobs, all types", "cyan"),
         (f"${s['spend_dbt']:,.2f}", f"{dbt_pct}% of the bill is dbt", "violet"),
         (f"+{overstate}%", "if script children were summed", "bad"),
     ]
@@ -98,11 +98,11 @@ def hero(p: dict, s: dict) -> str:
         w = 268
         tiles.append(f"""
   <g class="tile" style="animation-delay:{0.35 + i * 0.11:.2f}s">
-    <rect x="{x}" y="176" width="{w}" height="86" rx="10" fill="__CARD__" stroke="__BORDER__"/>
-    <rect x="{x}" y="176" width="4" height="86" rx="2" fill="__{colour.upper()}__"/>
-    <text x="{x + 22}" y="220" font-family="__FONT__" font-size="30" font-weight="700"
+    <rect x="{x}" y="190" width="{w}" height="100" rx="10" fill="__CARD__" stroke="__BORDER__"/>
+    <rect x="{x}" y="190" width="4" height="100" rx="2" fill="__{colour.upper()}__"/>
+    <text x="{x + 22}" y="240" font-family="__FONT__" font-size="35" font-weight="700"
           fill="__TEXT__" letter-spacing="-0.5">{esc(value)}</text>
-    <text x="{x + 22}" y="243" font-family="__FONT__" font-size="12.5"
+    <text x="{x + 22}" y="268" font-family="__FONT__" font-size="15.5"
           fill="__MUTED__">{esc(label)}</text>
   </g>""")
         x += w + 16
@@ -111,17 +111,17 @@ def hero(p: dict, s: dict) -> str:
     bx = 40
     badge_svg = []
     for i, b in enumerate(badges):
-        bw = 16 + len(b) * 6.6
+        bw = 24 + len(b) * 8.4
         badge_svg.append(f"""
   <g class="badge" style="animation-delay:{0.85 + i * 0.07:.2f}s">
-    <rect x="{bx:.0f}" y="284" width="{bw:.0f}" height="24" rx="12"
+    <rect x="{bx:.0f}" y="312" width="{bw:.0f}" height="32" rx="16"
           fill="__CARD2__" stroke="__BORDER__"/>
-    <text x="{bx + bw / 2:.0f}" y="300" text-anchor="middle" font-family="__FONT__"
-          font-size="11" fill="__MUTED__">{esc(b)}</text>
+    <text x="{bx + bw / 2:.0f}" y="333" text-anchor="middle" font-family="__FONT__"
+          font-size="15.5" fill="__MUTED__">{esc(b)}</text>
   </g>""")
         bx += bw + 10
 
-    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 330" width="1200" height="330" role="img" aria-label="BigQuery and dbt Cost Observability">
+    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 366" width="1200" height="366" role="img" aria-label="BigQuery and dbt Cost Observability">
   <style>
     /* Entrance animations move things but never fade them. A renderer that does
        not run CSS - GitHub's mobile app, an email digest, a PDF export - would
@@ -153,7 +153,7 @@ def hero(p: dict, s: dict) -> str:
       <stop offset="50%"  stop-color="__PRIMARY__" stop-opacity="1"/>
       <stop offset="100%" stop-color="__PRIMARY__" stop-opacity="0"/>
     </linearGradient>
-    <clipPath id="ruleClip"><rect x="40" y="150" width="1120" height="3" rx="1.5"/></clipPath>
+    <clipPath id="ruleClip"><rect x="40" y="164" width="1120" height="3" rx="1.5"/></clipPath>
     <!-- Heavy blur turns the two circles into an ambient wash. Unblurred they
          read as hard discs sitting on top of the text. -->
     <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
@@ -168,7 +168,7 @@ def hero(p: dict, s: dict) -> str:
   </g>
 
   <g class="ttl">
-    <text x="40" y="76" font-family="__FONT__" font-size="34" font-weight="700"
+    <text x="40" y="80" font-family="__FONT__" font-size="38" font-weight="700"
           fill="__TEXT__" letter-spacing="-0.8">BigQuery + dbt Cost Observability</text>
   </g>
   <!-- The strapline carries the whole point of the repo, so it is sized and
@@ -177,17 +177,17 @@ def hero(p: dict, s: dict) -> str:
        __FAINT__ was too low-contrast to read in either palette, and worse on
        dark, where faint is darker than muted rather than lighter. -->
   <g class="ttl" style="animation-delay:.1s">
-    <text x="40" y="108" font-family="__FONT__" font-size="17" fill="__TEXT__">
+    <text x="40" y="116" font-family="__FONT__" font-size="20" fill="__TEXT__">
       Two halves: what the whole warehouse costs, and what dbt costs inside it.
     </text>
-    <text x="40" y="132" font-family="__MONO__" font-size="12.5" fill="__MUTED__">
+    <text x="40" y="146" font-family="__MONO__" font-size="15" fill="__MUTED__">
       Power BI semantic model  ·  runs on committed sample data, no cloud account needed
     </text>
   </g>
 
-  <rect class="rule" x="40" y="150" width="1120" height="3" rx="1.5" fill="__PRIMARY__" opacity="0.85"/>
+  <rect class="rule" x="40" y="164" width="1120" height="3" rx="1.5" fill="__PRIMARY__" opacity="0.85"/>
   <g clip-path="url(#ruleClip)">
-    <rect class="sheen" x="40" y="150" width="160" height="3" fill="url(#sheenG)"/>
+    <rect class="sheen" x="40" y="164" width="160" height="3" fill="url(#sheenG)"/>
   </g>
 {''.join(tiles)}
 {''.join(badge_svg)}
@@ -203,6 +203,12 @@ def hero(p: dict, s: dict) -> str:
 def architecture(p: dict, s: dict) -> str:
     def box(x, y, w, h, title, lines, accent, dashed=False):
         dash = ' stroke-dasharray="5 4"' if dashed else ""
+        # 10.5 renders at 7.9 in GitHub's ~900px column, which is below the
+        # ~11px floor the rest of these assets hold to. It cannot be raised
+        # here: six boxes across 1200px leave ~218px of text width, and the
+        # longest body line already needs 189 of it. Clearing 11px rendered
+        # means 14.7 source, so the boxes would have to be half again as wide.
+        # That is a layout change - fewer columns, or two rows - not a size one.
         body = "".join(
             f'<text x="{x + 16}" y="{y + 50 + i * 17}" font-family="__MONO__" font-size="10.5" '
             f'fill="__MUTED__">{esc(t)}</text>'
@@ -213,7 +219,7 @@ def architecture(p: dict, s: dict) -> str:
     <rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="__CARD__"
           stroke="__BORDER__"{dash}/>
     <rect x="{x}" y="{y}" width="{w}" height="3" rx="1.5" fill="__{accent.upper()}__"/>
-    <text x="{x + 16}" y="{y + 28}" font-family="__FONT__" font-size="13"
+    <text x="{x + 16}" y="{y + 28}" font-family="__FONT__" font-size="16"
           font-weight="600" fill="__TEXT__">{esc(title)}</text>
     {body}
   </g>"""
@@ -237,9 +243,9 @@ def architecture(p: dict, s: dict) -> str:
             "model + test executions", "invocations · models · tags",
             f"{s['models']} models · {s['tests']} tests", "adapter_response → job_id",
         ], "violet")
-        + box(36, 306, 250, 88, "sample-data/*.csv", [
+        + box(36, 300, 250, 104, "sample-data/*.csv", [
             "the committed synthetic month",
-            f"{s['jobs_total']:,} jobs · {s['window_start']} to {s['window_end']}",
+            f"{s['jobs_total']:,} jobs", f"{s['window_start']} to {s['window_end']}",
             "no cloud account required",
         ], "good", dashed=True)
         + box(366, 150, 214, 150, "Power Query", [
@@ -255,7 +261,7 @@ def architecture(p: dict, s: dict) -> str:
         ], "warn")
         + box(958, 150, 206, 150, "Report", [
             "Query & Usage Insights", "DBT Jobs", "DBT Jobs · Nodes Failed",
-            "two Explore tabs", "", "drillthrough + tooltip pages",
+            "two Explore tabs", "", "drillthrough + tooltips",
         ], "good")
     )
 
@@ -284,11 +290,11 @@ def architecture(p: dict, s: dict) -> str:
     @media (prefers-reduced-motion: reduce) {{ .node,.dash {{ animation: none }} }}
   </style>
   <rect width="1200" height="430" fill="__BG__"/>
-  <text x="36" y="26" font-family="__FONT__" font-size="12" font-weight="600"
+  <text x="36" y="28" font-family="__FONT__" font-size="15.5" font-weight="600"
         fill="__FAINT__" letter-spacing="1.4">HOW IT IS WIRED</text>
 {flows}
 {boxes}
-  <text x="366" y="326" font-family="__MONO__" font-size="10" fill="__FAINT__">
+  <text x="366" y="348" font-family="__MONO__" font-size="15" fill="__FAINT__">
     p_DataSource = "SampleCSV" | "BigQuery"
   </text>
 </svg>
@@ -307,34 +313,34 @@ def attribution(p: dict, s: dict) -> str:
         ("Node (dbt metadata)", a["node_metadata"], "good",
          "matched to a recorded node execution by job id"),
         ("Node (label)", a["node_label"], "warn",
-         "post-hook jobs dbt never records - labels are the only route"),
+         "post-hook jobs dbt never records - labels only"),
         ("Run-level", a["run_level"], "faint",
-         "a dbt run with no identifiable node, e.g. run-operation"),
+         "a dbt run with no identifiable node"),
     ]
 
     max_usd = max(r[1]["usd"] for r in rows) or 1
     bars = []
-    y = 92
+    y = 104
     for i, (label, vals, colour, note) in enumerate(rows):
         pct = vals["usd"] / total * 100 if total else 0
-        w = max(3, round(vals["usd"] / max_usd * 640))
+        w = max(3, round(vals["usd"] / max_usd * 560))
         bars.append(f"""
   <g class="row" style="animation-delay:{0.15 + i * 0.14:.2f}s">
-    <text x="36" y="{y + 4}" font-family="__FONT__" font-size="13.5" font-weight="600"
+    <text x="36" y="{y + 2}" font-family="__FONT__" font-size="17" font-weight="600"
           fill="__TEXT__">{esc(label)}</text>
-    <text x="36" y="{y + 24}" font-family="__FONT__" font-size="11.5"
+    <text x="36" y="{y + 26}" font-family="__FONT__" font-size="15"
           fill="__MUTED__">{esc(note)}</text>
-    <rect x="380" y="{y - 12}" width="640" height="20" rx="5" fill="__TRACK__"/>
+    <rect x="420" y="{y - 14}" width="560" height="24" rx="6" fill="__TRACK__"/>
     <rect class="bar" style="animation-delay:{0.3 + i * 0.14:.2f}s;--w:{w}px"
-          x="380" y="{y - 12}" height="20" rx="5" fill="__{colour.upper()}__"/>
-    <text x="1040" y="{y + 3}" font-family="__MONO__" font-size="13" font-weight="600"
-          fill="__TEXT__">${vals['usd']:,.2f}</text>
-    <text x="1040" y="{y + 22}" font-family="__MONO__" font-size="10.5"
+          x="420" y="{y - 14}" height="24" rx="6" fill="__{colour.upper()}__"/>
+    <text x="1164" y="{y + 2}" text-anchor="end" font-family="__MONO__" font-size="16.5"
+          font-weight="600" fill="__TEXT__">${vals['usd']:,.2f}</text>
+    <text x="1164" y="{y + 26}" text-anchor="end" font-family="__MONO__" font-size="15"
           fill="__MUTED__">{pct:.1f}%  ·  {vals['jobs']:,} jobs</text>
   </g>""")
-        y += 78
+        y += 86
 
-    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 330" width="1200" height="330" role="img" aria-label="How dbt spend is attributed across three branches">
+    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 372" width="1200" height="372" role="img" aria-label="How dbt spend is attributed across three branches">
   <style>
     /* The bar's resting width is its real width, and the animation grows into it.
        Written the other way round - base width 0, filled in by the animation - a
@@ -348,15 +354,15 @@ def attribution(p: dict, s: dict) -> str:
       .row,.bar {{ animation: none }}
     }}
   </style>
-  <rect width="1200" height="330" fill="__BG__"/>
-  <text x="36" y="34" font-family="__FONT__" font-size="12" font-weight="600"
+  <rect width="1200" height="372" fill="__BG__"/>
+  <text x="36" y="36" font-family="__FONT__" font-size="15.5" font-weight="600"
         fill="__FAINT__" letter-spacing="1.4">WHERE THE dbt BILL COMES FROM</text>
-  <text x="36" y="60" font-family="__FONT__" font-size="14" fill="__MUTED__">
+  <text x="36" y="66" font-family="__FONT__" font-size="17.5" fill="__MUTED__">
     ${total:,.2f} of dbt spend, split by how confidently each job ties back to a node.
   </text>
 {''.join(bars)}
-  <rect x="36" y="286" width="1128" height="1" fill="__BORDER__"/>
-  <text x="36" y="312" font-family="__FONT__" font-size="12" fill="__MUTED__">
+  <rect x="36" y="322" width="1128" height="1" fill="__BORDER__"/>
+  <text x="36" y="352" font-family="__FONT__" font-size="15.5" fill="__MUTED__">
     Drop the label branch and ${a['node_label']['usd']:,.2f} of the bill - {a['node_label']['usd'] / total * 100:.1f}% - becomes unattributable. That is the case for this model.
   </text>
 </svg>
@@ -429,7 +435,7 @@ def cta(p: dict, s: dict) -> str:
 
     <text x="84" y="42" font-family="__FONT__" font-size="21" font-weight="700"
           fill="#FFFFFF" letter-spacing="-0.2">Open the live report</text>
-    <text x="84" y="63" font-family="__FONT__" font-size="12.5"
+    <text x="84" y="63" font-family="__FONT__" font-size="13.5"
           fill="#FFFFFF" fill-opacity="0.88">Power BI service  &#183;  runs in your browser  &#183;  no sign-in, no cloud account</text>
   </g>
 </svg>
@@ -496,20 +502,20 @@ def section(p: dict, s: dict, spec: dict) -> str:
     chips = []
     cx = 92
     for i, c in enumerate(spec["chips"]):
-        cw = 22 + len(c) * 6.9
+        cw = 26 + len(c) * 8.6
         chips.append(f"""
   <g class="chip" style="animation-delay:{0.30 + i * 0.09:.2f}s">
-    <rect x="{cx:.0f}" y="112" width="{cw:.0f}" height="27" rx="13.5"
+    <rect x="{cx:.0f}" y="132" width="{cw:.0f}" height="33" rx="16.5"
           fill="__CARD__" stroke="__BORDER__"/>
-    <circle cx="{cx + 13:.0f}" cy="125.5" r="3.5" fill="{accent}"/>
-    <text x="{cx + 24:.0f}" y="130" font-family="__FONT__" font-size="12"
+    <circle cx="{cx + 15:.0f}" cy="148.5" r="4" fill="{accent}"/>
+    <text x="{cx + 28:.0f}" y="154" font-family="__FONT__" font-size="15.5"
           fill="__MUTED__">{esc(c)}</text>
   </g>""")
         cx += cw + 9
 
-    note_w = 20 + len(spec["note"]) * 6.6
+    note_w = 24 + len(spec["note"]) * 8.4
 
-    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 162" width="1200" height="162" role="img" aria-label="{esc(spec['eyebrow'])} - {esc(spec['title'])}">
+    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 196" width="1200" height="196" role="img" aria-label="{esc(spec['eyebrow'])} - {esc(spec['title'])}">
   <style>
     /* Same rule as the hero: entrance animations only ever move things. The
        resting state of every element is its final state, so the banner is fully
@@ -524,7 +530,7 @@ def section(p: dict, s: dict, spec: dict) -> str:
     @keyframes pop {{ from {{ transform: scale(.82) }} to {{ transform: scale(1) }} }}
     @keyframes slidein {{ from {{ transform: translateX(-10px) }}
                           to   {{ transform: translateX(0) }} }}
-    @keyframes stretch {{ from {{ height: 0 }} to {{ height: 162px }} }}
+    @keyframes stretch {{ from {{ height: 0 }} to {{ height: 196px }} }}
     @media (prefers-reduced-motion: reduce) {{
       .glyph,.txt,.chip,.edge {{ animation: none }}
     }}
@@ -536,36 +542,36 @@ def section(p: dict, s: dict, spec: dict) -> str:
     </linearGradient>
   </defs>
 
-  <rect width="1200" height="162" fill="__BG__"/>
-  <rect width="640" height="162" fill="url(#wash)"/>
-  <rect class="edge" x="0" y="0" width="6" height="162" fill="{accent}"/>
+  <rect width="1200" height="196" fill="__BG__"/>
+  <rect width="640" height="196" fill="url(#wash)"/>
+  <rect class="edge" x="0" y="0" width="6" height="196" fill="{accent}"/>
 
   <!-- Two nested groups on purpose. A CSS `transform` in the animation would
        override the SVG transform attribute on the same element, so animating
        scale on the positioned group snaps the glyph to the origin. The outer
        group positions, the inner one animates. -->
-  <g transform="translate(52,58)">
+  <g transform="translate(52,70)">
     <g class="glyph">{GLYPHS[spec['glyph']].replace('__ACCENT__', accent)}</g>
   </g>
 
   <g class="txt">
-    <text x="92" y="42" font-family="__FONT__" font-size="11.5" font-weight="700"
+    <text x="92" y="46" font-family="__FONT__" font-size="17" font-weight="700"
           fill="{accent}" letter-spacing="2">{esc(spec['eyebrow'])}</text>
   </g>
   <g class="txt" style="animation-delay:.06s">
-    <text x="92" y="74" font-family="__FONT__" font-size="27" font-weight="700"
+    <text x="92" y="86" font-family="__FONT__" font-size="31" font-weight="700"
           fill="__TEXT__" letter-spacing="-0.5">{esc(spec['title'])}</text>
   </g>
   <g class="txt" style="animation-delay:.12s">
-    <text x="92" y="98" font-family="__FONT__" font-size="13.5"
+    <text x="92" y="116" font-family="__FONT__" font-size="17.5"
           fill="__MUTED__">{esc(spec['subtitle'])}</text>
   </g>
 
   <g class="txt" style="animation-delay:.18s">
-    <rect x="{1164 - note_w:.0f}" y="34" width="{note_w:.0f}" height="26" rx="13"
+    <rect x="{1164 - note_w:.0f}" y="36" width="{note_w:.0f}" height="32" rx="16"
           fill="{accent}" fill-opacity="0.14" stroke="{accent}" stroke-opacity="0.45"/>
-    <text x="{1164 - note_w / 2:.0f}" y="51" text-anchor="middle"
-          font-family="__FONT__" font-size="11.5" font-weight="600"
+    <text x="{1164 - note_w / 2:.0f}" y="57" text-anchor="middle"
+          font-family="__FONT__" font-size="15" font-weight="600"
           fill="{accent}">{esc(spec['note'])}</text>
   </g>
 {''.join(chips)}

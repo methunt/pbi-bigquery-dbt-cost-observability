@@ -15,7 +15,7 @@
     @media (prefers-reduced-motion: reduce) { .node,.dash { animation: none } }
   </style>
   <rect width="1200" height="430" fill="#0D1117"/>
-  <text x="36" y="26" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="12" font-weight="600"
+  <text x="36" y="28" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15.5" font-weight="600"
         fill="#484F58" letter-spacing="1.4">HOW IT IS WIRED</text>
 
   <path d="M286,98 C326.0,98 326.0,200 366,200" fill="none" stroke="#30363D" stroke-width="1.5"/>
@@ -48,7 +48,7 @@
     <rect x="36" y="46" width="250" height="104" rx="10" fill="#161B22"
           stroke="#30363D"/>
     <rect x="36" y="46" width="250" height="3" rx="1.5" fill="#3B82F6"/>
-    <text x="52" y="74" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13"
+    <text x="52" y="74" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">INFORMATION_SCHEMA</text>
     <text x="52" y="96" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">JOBS_BY_PROJECT, per region</text><text x="52" y="113" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">bytes billed · labels · errors</text><text x="52" y="130" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">one row per job</text><text x="52" y="147" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">filtered to on-demand jobs</text>
   </g>
@@ -56,23 +56,23 @@
     <rect x="36" y="176" width="250" height="104" rx="10" fill="#161B22"
           stroke="#30363D"/>
     <rect x="36" y="176" width="250" height="3" rx="1.5" fill="#8B5CF6"/>
-    <text x="52" y="204" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13"
+    <text x="52" y="204" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">dbt_artifacts</text>
     <text x="52" y="226" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">model + test executions</text><text x="52" y="243" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">invocations · models · tags</text><text x="52" y="260" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">27 models · 14 tests</text><text x="52" y="277" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">adapter_response → job_id</text>
   </g>
   <g class="node">
-    <rect x="36" y="306" width="250" height="88" rx="10" fill="#161B22"
+    <rect x="36" y="300" width="250" height="104" rx="10" fill="#161B22"
           stroke="#30363D" stroke-dasharray="5 4"/>
-    <rect x="36" y="306" width="250" height="3" rx="1.5" fill="#10B981"/>
-    <text x="52" y="334" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13"
+    <rect x="36" y="300" width="250" height="3" rx="1.5" fill="#10B981"/>
+    <text x="52" y="328" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">sample-data/*.csv</text>
-    <text x="52" y="356" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">the committed synthetic month</text><text x="52" y="373" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">4,894 jobs · 2026-06-01 to 2026-06-30</text><text x="52" y="390" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">no cloud account required</text>
+    <text x="52" y="350" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">the committed synthetic month</text><text x="52" y="367" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">4,894 jobs</text><text x="52" y="384" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">2026-06-01 to 2026-06-30</text><text x="52" y="401" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">no cloud account required</text>
   </g>
   <g class="node">
     <rect x="366" y="150" width="214" height="150" rx="10" fill="#161B22"
           stroke="#30363D"/>
     <rect x="366" y="150" width="214" height="3" rx="1.5" fill="#22D3EE"/>
-    <text x="382" y="178" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13"
+    <text x="382" y="178" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">Power Query</text>
     <text x="382" y="200" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">p_DataSource switches</text><text x="382" y="217" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">every partition between</text><text x="382" y="234" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">BigQuery and CSV.</text><text x="382" y="251" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E"></text><text x="382" y="268" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">Types stated per table -</text><text x="382" y="285" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">CSV carries none.</text>
   </g>
@@ -80,7 +80,7 @@
     <rect x="654" y="128" width="236" height="194" rx="10" fill="#161B22"
           stroke="#30363D"/>
     <rect x="654" y="128" width="236" height="3" rx="1.5" fill="#F59E0B"/>
-    <text x="670" y="156" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13"
+    <text x="670" y="156" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">Semantic model</text>
     <text x="670" y="178" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">Fact  ← one row per job</text><text x="670" y="195" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">dbt_node_executions</text><text x="670" y="212" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">dbt_invocations · dbt_models</text><text x="670" y="229" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">dim_Date · dim_Region_Cost</text><text x="670" y="246" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E"></text><text x="670" y="263" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">cost restricted to top-level</text><text x="670" y="280" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">jobs (parent_job_id BLANK)</text><text x="670" y="297" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E"></text><text x="670" y="314" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">region → usd_per_tib rate</text>
   </g>
@@ -88,11 +88,11 @@
     <rect x="958" y="150" width="206" height="150" rx="10" fill="#161B22"
           stroke="#30363D"/>
     <rect x="958" y="150" width="206" height="3" rx="1.5" fill="#10B981"/>
-    <text x="974" y="178" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13"
+    <text x="974" y="178" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16"
           font-weight="600" fill="#E6EDF3">Report</text>
-    <text x="974" y="200" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">Query &amp; Usage Insights</text><text x="974" y="217" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">DBT Jobs</text><text x="974" y="234" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">DBT Jobs · Nodes Failed</text><text x="974" y="251" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">two Explore tabs</text><text x="974" y="268" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E"></text><text x="974" y="285" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">drillthrough + tooltip pages</text>
+    <text x="974" y="200" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">Query &amp; Usage Insights</text><text x="974" y="217" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">DBT Jobs</text><text x="974" y="234" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">DBT Jobs · Nodes Failed</text><text x="974" y="251" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">two Explore tabs</text><text x="974" y="268" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E"></text><text x="974" y="285" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10.5" fill="#8B949E">drillthrough + tooltips</text>
   </g>
-  <text x="366" y="326" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="10" fill="#484F58">
+  <text x="366" y="348" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="15" fill="#484F58">
     p_DataSource = "SampleCSV" | "BigQuery"
   </text>
 </svg>
