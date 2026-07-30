@@ -46,21 +46,6 @@
               "nativeQueryRef": "Month",
               "active": true,
               "displayName": "Month"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "dim_Date"
-                    }
-                  },
-                  "Property": "Day"
-                }
-              },
-              "queryRef": "dim_Date.Day",
-              "nativeQueryRef": "Day",
-              "active": true
             }
           ]
         },
@@ -428,7 +413,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "false"
+                  "Value": "true"
                 }
               }
             },
@@ -732,5 +717,79 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "5221857b29529b7b428d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_Date"
+              }
+            },
+            "Property": "Year"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "5697bba8cc84da07c94b",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_Date"
+              }
+            },
+            "Property": "MonthName"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "76e10f17ce855459c3b1",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Measure"
+              }
+            },
+            "Property": "Cache Hit Rate %"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a9a65a38e24895cd6409",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Measure"
+              }
+            },
+            "Property": "BI Engine Acceleration Rate %"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f5e28c72711ee0023057",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Measure"
+              }
+            },
+            "Property": "Total Billed Queries Rate %"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

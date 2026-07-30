@@ -20,16 +20,15 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "dbt_models"
+                      "Entity": "dbt_node_executions"
                     }
                   },
-                  "Property": "layer"
+                  "Property": "node_type"
                 }
               },
-              "queryRef": "dbt_models.layer",
-              "nativeQueryRef": " ",
-              "active": true,
-              "displayName": " "
+              "queryRef": "dbt_node_executions.node_type",
+              "nativeQueryRef": "node_type",
+              "active": true
             }
           ]
         }
@@ -162,7 +161,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Layer'"
+                  "Value": "'Node Type'"
                 }
               }
             },

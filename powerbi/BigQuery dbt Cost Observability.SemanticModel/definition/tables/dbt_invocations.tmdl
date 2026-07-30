@@ -103,7 +103,6 @@ table dbt_invocations
 
 	partition dbt_invocations = m
 		mode: import
-		queryGroup: Dim
 		source =
 				let
 				    _sql =

@@ -70,30 +70,13 @@
                                 "Expression": {
                                   "DateAdd": {
                                     "Expression": {
-                                      "ScopedEval": {
-                                        "Expression": {
-                                          "Aggregation": {
-                                            "Expression": {
-                                              "Column": {
-                                                "Expression": {
-                                                  "SourceRef": {
-                                                    "Source": "d"
-                                                  }
-                                                },
-                                                "Property": "Date"
-                                              }
-                                            },
-                                            "Function": 4
-                                          }
-                                        },
-                                        "Scope": []
-                                      }
+                                      "Now": {}
                                     },
                                     "Amount": 1,
                                     "TimeUnit": 0
                                   }
                                 },
-                                "Amount": -2,
+                                "Amount": -3,
                                 "TimeUnit": 2
                               }
                             },
@@ -103,24 +86,7 @@
                         "UpperBound": {
                           "DateSpan": {
                             "Expression": {
-                              "ScopedEval": {
-                                "Expression": {
-                                  "Aggregation": {
-                                    "Expression": {
-                                      "Column": {
-                                        "Expression": {
-                                          "SourceRef": {
-                                            "Source": "d"
-                                          }
-                                        },
-                                        "Property": "Date"
-                                      }
-                                    },
-                                    "Function": 4
-                                  }
-                                },
-                                "Scope": []
-                              }
+                              "Now": {}
                             },
                             "TimeUnit": 0
                           }

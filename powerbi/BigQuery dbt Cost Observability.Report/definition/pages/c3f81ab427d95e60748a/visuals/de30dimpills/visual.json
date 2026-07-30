@@ -130,6 +130,13 @@
                                 "Value": "'''dbt_models''[schema_name]'"
                               }
                             }
+                          ],
+                          [
+                            {
+                              "Literal": {
+                                "Value": "'''dbt_node_executions''[node_type]'"
+                              }
+                            }
                           ]
                         ]
                       }
@@ -171,6 +178,17 @@
                                   }
                                 ]
                               }
+                            ],
+                            [
+                              {
+                                "0": [
+                                  {
+                                    "Literal": {
+                                      "Value": "'''dbt_node_executions''[node_type]'"
+                                    }
+                                  }
+                                ]
+                              }
                             ]
                           ],
                           "columns": [
@@ -194,6 +212,9 @@
                           },
                           {
                             "0": "Schema"
+                          },
+                          {
+                            "0": "Node Type"
                           }
                         ]
                       }

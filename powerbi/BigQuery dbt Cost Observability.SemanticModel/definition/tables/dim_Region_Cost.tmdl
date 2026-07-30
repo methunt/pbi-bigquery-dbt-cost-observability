@@ -27,7 +27,6 @@ table dim_Region_Cost
 
 	partition dim_Region_Cost = m
 		mode: import
-		queryGroup: Dim
 		source =
 				let
 				    Source = #table(

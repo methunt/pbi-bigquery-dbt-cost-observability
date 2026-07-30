@@ -56,7 +56,6 @@ table '#Data Processed Category'
 
 	partition '#Data Processed Category' = m
 		mode: import
-		queryGroup: Dim
 		source =
 				let
 				  Categories = Table.FromRows({

@@ -24,7 +24,6 @@ table '#Day Usage'
 
 	partition '#Day Usage' = m
 		mode: import
-		queryGroup: Dim
 		source =
 				let
 				  Source = Table.FromRows({

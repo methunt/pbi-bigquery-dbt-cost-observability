@@ -80,7 +80,6 @@ table dbt_job_statements
 
 	partition dbt_job_statements = m
 		mode: import
-		queryGroup: Dim
 		source = ```
 				let
 				    SqlTemplate =
@@ -125,4 +124,8 @@ table dbt_job_statements
 				in
 				    Source
 				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

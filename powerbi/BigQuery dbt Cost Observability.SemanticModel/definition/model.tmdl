@@ -8,23 +8,11 @@ model Model
 
 queryGroup Dim
 
-	annotation PBI_QueryGroupOrder = 2
-
-queryGroup Fact
-
-	annotation PBI_QueryGroupOrder = 3
-
-queryGroup Parameter
-
 	annotation PBI_QueryGroupOrder = 0
-
-queryGroup Measure
-
-	annotation PBI_QueryGroupOrder = 1
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["_LastRefreshed","fx_GetJobdetails","Source_BQ","Measure","dim_Date","#Data Processed Category","Fact","#Day Usage","dim_Region_Cost","dbt_invocations","dbt_models","dbt_model_tags","dbt_job_statements","RangeStart","RangeEnd","bq_project","p_DbtMeta_Project","p_DbtMeta_Dataset","p_DbtMeta_Prefix","p_Regions","dbt_node_executions","p_DataSource","p_SampleDataPath","fn_ReadSampleCsv"]
+annotation PBI_QueryOrder = ["_LastRefreshed","fx_GetJobdetails","Source_BQ","Measure","dim_Date","#Data Processed Category","Fact","#Day Usage","dim_Region_Cost","dbt_invocations","dbt_models","dbt_node_executions","dbt_model_tags","dbt_job_statements","RangeStart","RangeEnd","bq_project","p_DbtMeta_Project","p_DbtMeta_Dataset","p_DbtMeta_Prefix","p_Regions","p_DataSource","p_SampleDataPath","fn_ReadSampleCsv"]
 
 annotation PBI_ProTooling = ["DevMode","MCP-PBIModeling"]
 

@@ -102,7 +102,6 @@ table dim_Date
 
 	partition dim_Date = m
 		mode: import
-		queryGroup: Dim
 		source =
 				let
 				    StartDate = #date(2026, 1, 1),

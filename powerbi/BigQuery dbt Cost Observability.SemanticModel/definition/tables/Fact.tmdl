@@ -567,7 +567,6 @@ table Fact
 
 	partition Fact = m
 		mode: import
-		queryGroup: Fact
 		source =
 				let
 				    SqlTemplate =

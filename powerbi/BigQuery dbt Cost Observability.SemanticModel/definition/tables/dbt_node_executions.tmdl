@@ -329,6 +329,21 @@ table dbt_node_executions
 		summarizeBy: none
 		sortByColumn: runtime_bucket_order
 
+	/// Collapses node_type into what the execution was FOR: Build (a model or a snapshot - it writes a table and bills bytes) or Test (it verifies one and bills bytes without producing data). Every measure that used to filter node_type = "Model" now filters node_class = "Build", so snapshots are counted alongside models rather than being invisible to the build KPIs.
+	/// 
+	/// An unrecognised node_type deliberately falls to "Other" rather than to "Build". If dbt seeds or operations are added to the union later they will be EXCLUDED from the build measures until someone maps them here - a visible gap in one place, rather than silently folding a new kind of spend into an existing headline number. This SWITCH is that decision point.
+	column node_class =
+			SWITCH (
+			    'dbt_node_executions'[node_type],
+			    "Model", "Build",
+			    "Snapshot", "Build",
+			    "Test", "Test",
+			    "Other"
+			)
+		dataType: string
+		lineageTag: 34984113-24a4-4580-ab0d-d9df5577b553
+		summarizeBy: none
+
 	partition dbt_node_executions = m
 		mode: import
 		source =
@@ -370,7 +385,34 @@ table dbt_node_executions
 				        " r.slot_ms, r.adapter_code" &
 				        " FROM " & _base & "stg_dbt__test_executions` e" &
 				        " LEFT JOIN " & _base & "dim_dbt__tests` t ON t.test_execution_id = e.test_execution_id" &
-				        " LEFT JOIN raw_test r ON r.command_invocation_id = e.command_invocation_id AND r.node_id = e.node_id",
+				        " LEFT JOIN raw_test r ON r.command_invocation_id = e.command_invocation_id AND r.node_id = e.node_id" &
+				        // Snapshot branch. Unlike tests, this reads the STAGING table directly and needs no
+				        // join back to a raw table: stg_dbt__snapshot_executions keeps adapter_response, so
+				        // job_id, slot_ms and the adapter code all come from the same row - the same shape as
+				        // the model branch above. A snapshot bills like a model (dbt issues a MERGE against
+				        // the snapshot table) so its spend belongs in the same fact join, not in a side table.
+				        " UNION ALL" &
+				        " SELECT 'Snapshot' AS node_type, s.snapshot_execution_id AS node_execution_id," &
+				        " s.command_invocation_id, s.node_id, CAST(NULL AS STRING) AS test_node_id," &
+				        " s.name AS node_name, s.run_started_at, DATE(s.run_started_at) AS run_date, s.status," &
+				        " s.compile_started_at, s.query_completed_at, s.total_node_runtime, s.thread_id," &
+				        " s.was_full_refresh, s.rows_affected," &
+				        // No bytes_processed column exists on the snapshot staging table, unlike the model one.
+				        // Left NULL rather than substituted from the billing side: this column means 'what dbt
+				        // recorded', and Fact[total_bytes_processed] is the authority for what was actually read.
+				        " CAST(NULL AS INT64) AS bytes_processed, s.materialization," &
+				        " s.`schema` AS schema_name, s.alias, s.message," &
+				        " CAST(NULL AS INT64) AS failures, CAST(NULL AS STRING) AS test_path," &
+				        " CAST(NULL AS STRING) AS tags, CAST(NULL AS STRING) AS tested_nodes," &
+				        // The COALESCE is load-bearing, exactly as on the model branch. A snapshot skipped
+				        // because something upstream failed records NO adapter_response at all, so job_id is
+				        // NULL - 2 of the 4 snapshot executions present today. Without a synthetic key those
+				        // rows would collapse onto one blank job_id, breaking the Many-to-One relationship to
+				        // Fact and silently dropping every skipped snapshot from the run-health counts.
+				        " COALESCE(JSON_VALUE(s.adapter_response, '$.job_id'), CONCAT('no-job:snapshot:', s.snapshot_execution_id)) AS job_id," &
+				        " SAFE_CAST(JSON_VALUE(s.adapter_response, '$.slot_ms') AS INT64) AS slot_ms," &
+				        " JSON_VALUE(s.adapter_response, '$.code') AS adapter_code" &
+				        " FROM " & _base & "stg_dbt__snapshot_executions` s",
 				    _bq = () => Value.NativeQuery(Source_BQ{[Name = bq_project, Kind = "Database"]}[Data], _sql),
 				    _csv = () => fn_ReadSampleCsv("dbt_node_executions.csv", {
 				            {"node_execution_id", type text}, {"command_invocation_id", type text}, {"node_id", type text}, {"node_name", type text},
@@ -384,4 +426,8 @@ table dbt_node_executions
 				    Source = if p_DataSource = "SampleCSV" then _csv() else _bq()
 				in
 				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

@@ -89,6 +89,21 @@
               "queryRef": "Measure.BI Engine Acceleration Rate %",
               "nativeQueryRef": "BI Engine Acceleration %",
               "displayName": "BI Engine Acceleration %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Measure"
+                    }
+                  },
+                  "Property": "Unique Query Count"
+                }
+              },
+              "queryRef": "Measure.Unique Query Count",
+              "nativeQueryRef": "Total Unique Queries",
+              "displayName": "Total Unique Queries"
             }
           ],
           "fieldParameters": [
@@ -118,7 +133,7 @@
                 }
               },
               "index": 1,
-              "length": 4,
+              "length": 5,
               "sortDirection": "Descending"
             }
           ]

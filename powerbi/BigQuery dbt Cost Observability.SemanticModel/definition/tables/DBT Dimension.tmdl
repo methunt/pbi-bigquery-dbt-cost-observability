@@ -52,16 +52,17 @@ table 'DBT Dimension'
 				    ("Tag", NAMEOF('dbt_model_tags'[tag]), 6),
 				    ("Runtime Band", NAMEOF('dbt_node_executions'[runtime_bucket]), 7),
 				    ("Node Status", NAMEOF('dbt_node_executions'[status]), 8),
-				    ("Target Table", NAMEOF('Fact'[destination_table_id]), 9),
-				    ("Statement Type", NAMEOF('Fact'[statement_type]), 10),
-				    ("Resource Type", NAMEOF('Fact'[label_resource_type]), 11),
-				    ("Environment", NAMEOF('Fact'[label_env]), 12),
-				    ("Region", NAMEOF('Fact'[region]), 13),
-				    ("User", NAMEOF('Fact'[user_email]), 14),
-				    ("dbt Project", NAMEOF('dbt_invocations'[project_name]), 15),
-				    ("Target", NAMEOF('dbt_invocations'[target_name]), 16),
-				    ("dbt Command", NAMEOF('dbt_invocations'[dbt_command]), 17),
-				    ("Run", NAMEOF('Fact'[dbt Run]), 18)
+				    ("Node Type", NAMEOF('dbt_node_executions'[node_type]), 9),
+				    ("Target Table", NAMEOF('Fact'[destination_table_id]), 10),
+				    ("Statement Type", NAMEOF('Fact'[statement_type]), 11),
+				    ("Resource Type", NAMEOF('Fact'[label_resource_type]), 12),
+				    ("Environment", NAMEOF('Fact'[label_env]), 13),
+				    ("Region", NAMEOF('Fact'[region]), 14),
+				    ("User", NAMEOF('Fact'[user_email]), 15),
+				    ("dbt Project", NAMEOF('dbt_invocations'[project_name]), 16),
+				    ("Target", NAMEOF('dbt_invocations'[target_name]), 17),
+				    ("dbt Command", NAMEOF('dbt_invocations'[dbt_command]), 18),
+				    ("Run", NAMEOF('Fact'[dbt Run]), 19)
 				}
 
 	annotation PBI_Id = 98b5d599fcae42d4abf73fe5636763e1

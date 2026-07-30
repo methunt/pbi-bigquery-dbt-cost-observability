@@ -1,8 +1,8 @@
-/// One row per dbt model, deduped to its latest definition. The dbt_artifacts source holds one row per model per invocation, so it is reduced here to the most recent row per node - which also means a model that has since been removed from the project keeps its last known definition. Attributes are therefore current-state (Type 1): historical executions are described by today's materialization and tags.
+/// One row per dbt model OR snapshot, deduped to its latest definition - see node_kind to tell them apart. The name is historical: snapshots live here because they need the same layer, schema and name attributes a model does to be grouped in a visual, and a separate dimension would have split every shared attribute in two. The dbt_artifacts source holds one row per node per invocation, so it is reduced here to the most recent row per node - which also means a node since removed from the project keeps its last known definition. Attributes are therefore current-state (Type 1): historical executions are described by today's materialization and tags. Snapshots differ from models in two ways worth knowing: their layer is stated as 'snapshots' rather than derived from the file path, and they carry no tags, because dim_dbt__snapshots records none.
 table dbt_models
 	lineageTag: 737d3740-3fda-4cd7-8365-9d795fa159a2
 
-	/// dbt unique node id, in the form model.<project_name>.<model_name>.
+	/// dbt unique node id, in the form model.<project_name>.<model_name>, or snapshot.<project_name>.<snapshot_name> for a snapshot.
 	column node_id
 		dataType: string
 		lineageTag: dbdfc142-5ec0-409b-8995-0b854b1b2f05
@@ -37,7 +37,7 @@ table dbt_models
 		summarizeBy: none
 		sourceColumn: package_name
 
-	/// Path of the model file relative to the models directory.
+	/// Path of the model file relative to the models directory. For a snapshot this is relative to the project root instead, i.e. 'snapshots\<name>.sql', which is why layer is stated rather than parsed for snapshots.
 	column path
 		dataType: string
 		lineageTag: ebc23cb0-7d0f-4aba-8b66-3fddc762c26a
@@ -51,7 +51,7 @@ table dbt_models
 		summarizeBy: none
 		sourceColumn: checksum
 
-	/// How the model is built: table, view, incremental, ephemeral, or a custom materialization. Views are normally free to build - CREATE VIEW is a metadata-only operation - so a project's view layers cost nothing to rebuild.
+	/// How the model is built: table, view, incremental, ephemeral, snapshot, or a custom materialization. Views are normally free to build - CREATE VIEW is a metadata-only operation - so a project's view layers cost nothing to rebuild.
 	column materialization
 		dataType: string
 		lineageTag: 3a2af216-d153-4875-9ab2-ceff16300c5e
@@ -65,7 +65,7 @@ table dbt_models
 		summarizeBy: none
 		sourceColumn: alias
 
-	/// Comma-separated dbt tags, for display only. Use the dbt_model_tags bridge for filtering: a model can carry several tags, so tag-based totals are not additive.
+	/// Comma-separated dbt tags, for display only. Use the dbt_model_tags bridge for filtering: a model can carry several tags, so tag-based totals are not additive. Always BLANK for snapshots - dim_dbt__snapshots records no tags.
 	column tags
 		dataType: string
 		lineageTag: 7a43e81a-a379-4e60-9c66-422d4110323f
@@ -79,14 +79,14 @@ table dbt_models
 		summarizeBy: none
 		sourceColumn: meta
 
-	/// Top-level folder under models/, i.e. however the project organises its layers. Single-valued per model, so cost or runtime broken out by layer is additive and sums to the total - unlike tags, where a model can carry several and any tag breakdown double counts. '(root)' means the model sits directly in models/ with no folder, which is typical of installed packages. Combine with package_name to separate the project's own models from package ones.
+	/// Top-level folder under models/, i.e. however the project organises its layers. Single-valued per model, so cost or runtime broken out by layer is additive and sums to the total - unlike tags, where a model can carry several and any tag breakdown double counts. '(root)' means the model sits directly in models/ with no folder, which is typical of installed packages. Snapshots all read 'snapshots', stated rather than parsed from their path. Combine with package_name to separate the project's own models from package ones.
 	column layer
 		dataType: string
 		lineageTag: 99b21a9a-711a-4489-a144-b3ecd127c89c
 		summarizeBy: none
 		sourceColumn: layer
 
-	/// Second folder level under models/. BLANK when the model sits directly in its layer folder rather than in a subfolder.
+	/// Second folder level under models/. BLANK when the model sits directly in its layer folder rather than in a subfolder, and always BLANK for snapshots.
 	column sublayer
 		dataType: string
 		lineageTag: c3dd1d84-35c3-4dd1-8ba8-a3c9b9b6646c
@@ -103,14 +103,34 @@ table dbt_models
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Whether this row defines a dbt model or a snapshot. The table holds both, because a snapshot needs the same layer, schema and name attributes a model does in order to be grouped in a visual. Use this to separate them; use materialization for the finer distinction between table, view, incremental and snapshot.
+	column node_kind
+		dataType: string
+		lineageTag: 3f8c1d64-9b2a-4e77-8c05-1d6b47a90e21
+		summarizeBy: none
+		sourceColumn: node_kind
+
+	/// Snapshot strategy - 'check' or 'timestamp'. BLANK for models, which have no strategy. Worth knowing when a snapshot's cost looks high: a check strategy compares every configured column on every run, so it reads more than a timestamp strategy does.
+	column strategy
+		dataType: string
+		lineageTag: 7a2e5b90-4c13-48df-9e6a-2b8f05c7d134
+		summarizeBy: none
+		sourceColumn: strategy
+
 	partition dbt_models = m
 		mode: import
-		queryGroup: Dim
 		source =
 				let
 				    _sql =
 				        "WITH latest AS (" &
 				        "  SELECT * FROM `" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix & "dim_dbt__models`" &
+				        "  QUALIFY ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY run_started_at DESC) = 1" &
+				        ")," &
+				        // Snapshots are deduped by the same rule as models: the source keeps one row per node
+				        // per invocation, so without QUALIFY a snapshot present in ten runs would fan out to ten
+				        // dimension rows and break the One side of the relationship to dbt_node_executions.
+				        " latest_snap AS (" &
+				        "  SELECT * FROM `" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix & "dim_dbt__snapshots`" &
 				        "  QUALIFY ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY run_started_at DESC) = 1" &
 				        ")" &
 				        " SELECT node_id, name AS model_name, `database` AS database_name, `schema` AS schema_name," &
@@ -127,16 +147,42 @@ table dbt_models
 				        " CASE WHEN REGEXP_CONTAINS(IFNULL(SPLIT(REPLACE(path, CHR(92), '/'), '/')[SAFE_OFFSET(2)], ''), r'\.sql$')" &
 				        "      THEN NULL" &
 				        "      ELSE SPLIT(REPLACE(path, CHR(92), '/'), '/')[SAFE_OFFSET(2)] END AS sublayer," &
-				        " ARRAY_LENGTH(depends_on_nodes) AS upstream_count" &
-				        " FROM latest",
+				        " ARRAY_LENGTH(depends_on_nodes) AS upstream_count," &
+				        " 'Model' AS node_kind, CAST(NULL AS STRING) AS strategy" &
+				        " FROM latest" &
+				        // Snapshot definitions, so a snapshot execution resolves a layer, schema and name like
+				        // any model. Without this union every snapshot row in dbt_node_executions joins to
+				        // nothing and lands in a blank bucket in every visual grouped by a dbt_models column.
+				        " UNION ALL" &
+				        " SELECT node_id, name AS model_name, `database` AS database_name, `schema` AS schema_name," &
+				        " package_name, path, checksum," &
+				        // dim_dbt__snapshots carries no materialization column - a snapshot's materialization is
+				        // implicit in what it is - so it is stated here to match what the execution rows report.
+				        " 'snapshot' AS materialization, alias," &
+				        // No tags array on this source either, so tags cannot be carried through. The 'snapshot'
+				        // tag that makes these nodes reachable from a tag slicer is synthesized in
+				        // dbt_model_tags instead; see that table's description.
+				        " CAST(NULL AS STRING) AS tags," &
+				        " TO_JSON_STRING(meta) AS meta," &
+				        // Stated, not derived. A snapshot path is 'snapshots\<name>.sql', so the model rule above
+				        // would find segment 1 already ending in .sql and label it '(root)' - quietly mixing
+				        // snapshots in with the models that sit loose at the top of models/.
+				        " 'snapshots' AS layer, CAST(NULL AS STRING) AS sublayer," &
+				        " ARRAY_LENGTH(depends_on_nodes) AS upstream_count," &
+				        " 'Snapshot' AS node_kind, strategy" &
+				        " FROM latest_snap",
 				    _bq = () => Value.NativeQuery(Source_BQ{[Name = bq_project, Kind = "Database"]}[Data], _sql, null, [EnableFolding = true]),
 				    _csv = () => fn_ReadSampleCsv("dbt_models.csv", {
 				            {"node_id", type text}, {"model_name", type text}, {"alias", type text}, {"layer", type text},
 				            {"sublayer", type text}, {"materialization", type text}, {"schema_name", type text}, {"database_name", type text},
 				            {"package_name", type text}, {"path", type text}, {"checksum", type text}, {"tags", type text},
-				            {"meta", type text}, {"upstream_count", Int64.Type}
+				            {"meta", type text}, {"upstream_count", Int64.Type}, {"node_kind", type text}, {"strategy", type text}
 				    }),
 				    Source = if p_DataSource = "SampleCSV" then _csv() else _bq()
 				in
 				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

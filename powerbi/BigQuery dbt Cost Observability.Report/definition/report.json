@@ -86,6 +86,7 @@
     "allowChangeFilterTypes": true,
     "useEnhancedTooltips": true,
     "useScaledTooltips": true,
+    "filterPaneHiddenInEditMode": true,
     "useDefaultAggregateDisplayName": true,
     "customMemoryLimit": "1048576",
     "customTimeoutLimit": "225"

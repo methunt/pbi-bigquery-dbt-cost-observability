@@ -103,30 +103,13 @@
                                 "Expression": {
                                   "DateAdd": {
                                     "Expression": {
-                                      "ScopedEval": {
-                                        "Expression": {
-                                          "Aggregation": {
-                                            "Expression": {
-                                              "Column": {
-                                                "Expression": {
-                                                  "SourceRef": {
-                                                    "Source": "d"
-                                                  }
-                                                },
-                                                "Property": "Date"
-                                              }
-                                            },
-                                            "Function": 4
-                                          }
-                                        },
-                                        "Scope": []
-                                      }
+                                      "Now": {}
                                     },
                                     "Amount": 1,
                                     "TimeUnit": 0
                                   }
                                 },
-                                "Amount": -2,
+                                "Amount": -3,
                                 "TimeUnit": 2
                               }
                             },
@@ -136,24 +119,7 @@
                         "UpperBound": {
                           "DateSpan": {
                             "Expression": {
-                              "ScopedEval": {
-                                "Expression": {
-                                  "Aggregation": {
-                                    "Expression": {
-                                      "Column": {
-                                        "Expression": {
-                                          "SourceRef": {
-                                            "Source": "d"
-                                          }
-                                        },
-                                        "Property": "Date"
-                                      }
-                                    },
-                                    "Function": 4
-                                  }
-                                },
-                                "Scope": []
-                              }
+                              "Now": {}
                             },
                             "TimeUnit": 0
                           }
@@ -351,5 +317,23 @@
     "drillFilterOtherVisuals": true
   },
   "parentGroupName": "qi99filterpanel",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "b01144380d419eee92a5",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_Date"
+              }
+            },
+            "Property": "Date"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  },
   "isHidden": true
 }

@@ -47,6 +47,21 @@
             },
             {
               "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dbt_node_executions"
+                    }
+                  },
+                  "Property": "node_type"
+                }
+              },
+              "queryRef": "dbt_node_executions.node_type",
+              "nativeQueryRef": "Node Type",
+              "displayName": "Node Type"
+            },
+            {
+              "field": {
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
@@ -194,7 +209,7 @@
                 }
               },
               "index": 0,
-              "length": 2,
+              "length": 3,
               "sortDirection": "Descending"
             },
             {
@@ -209,7 +224,8 @@
                 }
               },
               "index": 1,
-              "length": 9
+              "length": 9,
+              "sortDirection": "Descending"
             }
           ]
         }
@@ -231,13 +247,13 @@
           },
           {
             "field": {
-              "Column": {
+              "Measure": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Fact"
+                    "Entity": "Measure"
                   }
                 },
-                "Property": "dbt Run"
+                "Property": "dbt Billed $"
               }
             },
             "direction": "Descending"
@@ -733,20 +749,6 @@
               }
             },
             "Property": "dbt Run"
-          }
-        },
-        "type": "Categorical"
-      },
-      {
-        "name": "bf9a4436a72340a30a57",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "dbt_models"
-              }
-            },
-            "Property": "schema_name"
           }
         },
         "type": "Categorical"

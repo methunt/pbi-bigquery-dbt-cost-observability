@@ -144,6 +144,13 @@
                                 "Value": "'''Measure''[BI Engine Acceleration Rate %]'"
                               }
                             }
+                          ],
+                          [
+                            {
+                              "Literal": {
+                                "Value": "'''Measure''[Unique Query Count]'"
+                              }
+                            }
                           ]
                         ]
                       }
@@ -207,6 +214,17 @@
                                   }
                                 ]
                               }
+                            ],
+                            [
+                              {
+                                "0": [
+                                  {
+                                    "Literal": {
+                                      "Value": "'''Measure''[Unique Query Count]'"
+                                    }
+                                  }
+                                ]
+                              }
                             ]
                           ],
                           "columns": [
@@ -236,6 +254,9 @@
                           },
                           {
                             "0": "BI Engine Acceleration %"
+                          },
+                          {
+                            "0": "Total Unique Queries"
                           }
                         ]
                       }

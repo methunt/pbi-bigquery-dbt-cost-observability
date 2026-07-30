@@ -209,13 +209,18 @@ table Measure
 
 		changedProperty = IsHidden
 
-	/// Model executions that actually ran - success or error, excluding skipped, because a skipped node never reached the warehouse. Models only despite the name: the node-executions table now carries tests as well, and this measure keeps its original models-only meaning. Renaming it to Models Run, and freeing Node Executions to mean every node type, is still an open decision.
+	/// Build executions that actually ran - success or error, excluding skipped, because a skipped node never reached the warehouse. Builds means models AND snapshots: both write a table and bill for it. Tests are excluded; see Tests Executed for those, and Run Outcomes for every node type together.
 	measure 'dbt Node Executions' =
-			-- node_type is now load-bearing: dbt_node_executions holds test rows too, so
-			-- without this filter the count silently includes tests and nothing errors.
+			-- node_class is load-bearing: dbt_node_executions holds test rows too, so without
+			-- this filter the count silently includes tests and nothing errors.
+			--
+			-- Filters node_class = "Build" rather than node_type = "Model" so snapshots count as
+			-- executions alongside models. A snapshot issues a MERGE against the table it
+			-- maintains and is billed for it exactly as a model is, so excluding it reported
+			-- fewer executions than the run actually performed.
 			CALCULATE (
 			    COUNTROWS ( 'dbt_node_executions' ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    KEEPFILTERS ( 'dbt_node_executions'[status] <> "skipped" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
@@ -237,11 +242,14 @@ table Measure
 		displayFolder: dbt\Execution
 		lineageTag: 305320c8-340a-4cc1-8ea0-7623aa0bb6e7
 
-	/// Distinct models that built successfully. Counts distinct nodes rather than rows so a model rebuilt several times in the window counts once. Skipped and errored nodes are excluded - a skipped node wrote nothing.
+	/// Distinct models and snapshots that built successfully. Counts distinct nodes rather than rows so a node rebuilt several times in the window counts once. Skipped and errored nodes are excluded - a skipped node wrote nothing. Split by dbt_models[node_kind] to separate models from snapshots.
 	measure 'dbt Models Built' =
+			-- node_class = "Build" covers models and snapshots. A snapshot is a table dbt
+			-- maintains on a schedule, so a run that refreshed one did build something and
+			-- counting only node_type = "Model" understated what the run produced.
 			CALCULATE (
 			    DISTINCTCOUNT ( 'dbt_node_executions'[node_id] ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    KEEPFILTERS ( 'dbt_node_executions'[status] = "success" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
@@ -249,14 +257,14 @@ table Measure
 		displayFolder: dbt\Execution
 		lineageTag: 9976ca09-d0f8-44d3-b3e6-74a19573c937
 
-	/// Model executions that ended in error. Failed builds still cost money on whatever they scanned before failing. Models only - see Tests Failed for the test side, and Nodes Needing Attention for everything that did not come out clean.
+	/// Model and snapshot executions that ended in error. Failed builds still cost money on whatever they scanned before failing. Builds only - see Tests Failed for the test side, and Nodes Needing Attention for everything that did not come out clean.
 	measure 'dbt Failed Nodes' =
-			-- Models only, and status = error rather than status_group = Failed, so this keeps
-			-- meaning exactly what it meant before the union: a MODEL that errored. Failing
-			-- tests are counted by Tests Failed.
+			-- Build nodes only, and status = error rather than status_group = Failed, so this
+			-- keeps meaning exactly what it meant before the union: a node that was supposed to
+			-- write a table and errored. Failing tests are counted by Tests Failed.
 			CALCULATE (
 			    COUNTROWS ( 'dbt_node_executions' ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    KEEPFILTERS ( 'dbt_node_executions'[status] = "error" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
@@ -264,7 +272,7 @@ table Measure
 		displayFolder: dbt\Execution
 		lineageTag: a263b275-3f1d-481a-969b-dfc0d7308405
 
-	/// Share of attempted model executions with status = success. The denominator deliberately counts every model row dbt recorded, including skipped nodes, so a failure that skips its downstream dependants is reflected in full. Ignores any filter on the outcome columns so the ratio cannot be narrowed by its own dimension - grouping the Explore grid by Node Status used to make every row read 100%. Models only; see Run Health % for models and tests together, and Test Pass Rate % for tests alone.
+	/// Share of attempted build executions (models and snapshots) with status = success. The denominator deliberately counts every build row dbt recorded, including skipped nodes, so a failure that skips its downstream dependants is reflected in full. Ignores any filter on the outcome columns so the ratio cannot be narrowed by its own dimension - grouping the Explore grid by Node Status used to make every row read 100%. See Run Health % for builds and tests together, and Test Pass Rate % for tests alone.
 	measure 'dbt Success Rate %' =
 			-- Both halves ignore any filter on the outcome columns, for the same reason as
 			-- Run Health %. Without it the ratio is self-fulfilling: Node Status is offered as
@@ -277,10 +285,13 @@ table Measure
 			-- three named columns, not the whole filter context. ALLSELECTED() would be wrong
 			-- here - it drops the invocation filter too, so a per-run grid would divide each
 			-- run's successes by every row in the selection (3 of 269 rather than 3 of 15).
+			--
+			-- node_class = "Build" must be identical in both halves; a mismatch would silently
+			-- compare successes in one population against attempts in another.
 			VAR Ok =
 			    CALCULATE (
 			        COUNTROWS ( 'dbt_node_executions' ),
-			        KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			        KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			        'dbt_node_executions'[status] = "success",
 			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
 			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
@@ -289,44 +300,54 @@ table Measure
 			VAR Attempted =
 			    CALCULATE (
 			        COUNTROWS ( 'dbt_node_executions' ),
-			        KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			        KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			        REMOVEFILTERS ( 'dbt_node_executions'[status] ),
 			        REMOVEFILTERS ( 'dbt_node_executions'[status_group] ),
 			        REMOVEFILTERS ( 'dbt_node_executions'[status_group_order] ),
 			        USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			    )
 			RETURN
-			    -- 0% when models were attempted but none succeeded; blank only when this
-			    -- selection attempted no models at all, so a test-only run reads as no data
+			    -- 0% when builds were attempted but none succeeded; blank only when this
+			    -- selection attempted no builds at all, so a test-only run reads as no data
 			    -- rather than as a total failure.
 			    IF ( NOT ISBLANK ( Attempted ), DIVIDE ( COALESCE ( Ok, 0 ), Attempted ) )
 		formatString: 0.0%;-0.0%;0.0%
 		displayFolder: dbt\Execution
 		lineageTag: c9483af2-1009-4da1-9b39-2bbc1795e427
 
-	/// Sum of model wall-clock time in minutes. Includes time spent in self-executing post-hooks, whose billed BYTES the run metadata does not capture - only the job history does. Models only: test runtime is in the same table now but is excluded here to keep the figure comparable with earlier reporting.
+	/// Sum of model and snapshot wall-clock time in minutes. Includes time spent in self-executing post-hooks, whose billed BYTES the run metadata does not capture - only the job history does. Test runtime is in the same table but excluded here, so this reads as time spent building.
 	measure 'dbt Total Runtime (min)' =
-			-- Models only, preserving the pre-union meaning. The unified table also carries test
-			-- runtime, so dropping the node_type filter would silently fold test time into this.
+			-- Build nodes only. The unified table also carries test runtime, so dropping this
+			-- filter would silently fold test time into a figure that reads as build time.
+			--
+			-- Snapshot runtime IS included: it is time the run spent maintaining a table, which
+			-- is the same kind of work a model does and competes for the same threads. Excluding
+			-- it would also make this inconsistent with Thread Efficiency %, which divides by the
+			-- run's whole elapsed window regardless of which node kinds occupied it.
 			CALCULATE (
 			    DIVIDE ( SUM ( 'dbt_node_executions'[total_node_runtime] ), 60 ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
 		formatString: #,0.0
 		displayFolder: dbt\Execution
 		lineageTag: 75a39cb2-4ca4-44d2-b5da-7c95fa6fe9c3
 
-	/// Mean wall-clock seconds per model execution, over models that actually ran. Skipped nodes are excluded because they report zero runtime rather than null, which would otherwise pull the average toward zero in exact proportion to how badly the run failed.
+	/// Mean wall-clock seconds per build execution (models and snapshots), over nodes that actually ran. Skipped nodes are excluded because they report zero runtime rather than null, which would otherwise pull the average toward zero in exact proportion to how badly the run failed.
 	measure 'dbt Avg Model Runtime (s)' =
-			-- Two exclusions, both load-bearing. node_type keeps test runtime out of a
-			-- model average. The skipped filter matters because dbt records
+			-- Two exclusions, both load-bearing. node_class keeps test runtime out of a
+			-- build average. The skipped filter matters because dbt records
 			-- total_node_runtime = 0 (not null) on a skipped node, so AVERAGE counts those
 			-- zeros and drags the mean down - on the 28 Jul 13:30 run that was 0.87s
 			-- reported against a true 11.33s.
+			--
+			-- Snapshots are averaged in with models. Be aware this mixes two populations: a
+			-- snapshot's runtime is dominated by its comparison strategy, not by how much data
+			-- it reads, so a slow snapshot moves this mean for a different reason than a slow
+			-- model does. Group by dbt_models[node_kind] when that distinction matters.
 			CALCULATE (
 			    AVERAGE ( 'dbt_node_executions'[total_node_runtime] ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    KEEPFILTERS ( 'dbt_node_executions'[status] <> "skipped" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
@@ -334,19 +355,26 @@ table Measure
 		displayFolder: dbt\Execution
 		lineageTag: 99ef69d9-33ae-4b72-9045-9c2b108d1a83
 
-	/// Slowest single model execution in the current context. No skipped filter is needed - a skipped node reports zero runtime and so can never be the maximum.
+	/// Slowest single build execution (model or snapshot) in the current context. No skipped filter is needed - a skipped node reports zero runtime and so can never be the maximum.
 	measure 'dbt Longest Model (s)' =
+			-- Build nodes, so a slow snapshot can surface here rather than hiding behind a
+			-- models-only filter - the point of the measure is to name whatever took longest.
 			CALCULATE (
 			    MAX ( 'dbt_node_executions'[total_node_runtime] ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
 		formatString: #,0.00
 		displayFolder: dbt\Execution
 		lineageTag: ccf4e8a4-6958-449f-8917-a992e549a283
 
-	/// Model runtime as a share of the thread-seconds the run had available: summed node runtime over elapsed window times target_threads. Below 100% means threads sat idle waiting on the DAG. Skipped nodes are excluded from both halves - they consume no thread time, and including them shrank the elapsed window as well as the numerator.
+	/// Build runtime as a share of the thread-seconds the run had available: summed node runtime over elapsed window times target_threads. Below 100% means threads sat idle waiting on the DAG. Skipped nodes are excluded from both halves - they consume no thread time, and including them shrank the elapsed window as well as the numerator. Snapshots are included so the numerator covers everything that actually occupied a thread.
 	measure 'Thread Efficiency %' =
+			-- node_class = "Build" rather than node_type = "Model" matters more here than in the
+			-- plain runtime measures, because this filter sets BOTH halves of the ratio: the
+			-- numerator's runtime and, through MIN/MAX of the timestamps, the elapsed window in
+			-- the denominator. A snapshot running inside the window while being excluded from it
+			-- would have counted its elapsed seconds as idle capacity and understated efficiency.
 			CALCULATE (
 			    VAR Runtime = SUM ( 'dbt_node_executions'[total_node_runtime] )
 			    VAR Capacity =
@@ -358,7 +386,7 @@ table Measure
 			            RETURN DATEDIFF ( StartAt, EndAt, SECOND ) * Threads
 			        )
 			    RETURN DIVIDE ( Runtime, Capacity ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    KEEPFILTERS ( 'dbt_node_executions'[status] <> "skipped" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
@@ -439,11 +467,11 @@ table Measure
 		displayFolder: dbt\Cost
 		lineageTag: 41904e3b-5505-4354-8e20-35bdda456913
 
-	/// Cost of jobs whose node was built with --full-refresh. Covers only runs present in the run metadata, which is where the full-refresh flag comes from. node_type is filtered to Model because tests carry the same flag but are not builds. The is_dbt_job filter is belt-and-braces: the join to node executions already restricts this to dbt jobs, but the explicit filter keeps it correct if that relationship's cross-filter direction ever changes.
+	/// Cost of jobs whose node was built with --full-refresh. Covers only runs present in the run metadata, which is where the full-refresh flag comes from. node_class is filtered to Build because tests carry the same flag but are not builds. Snapshots are in scope but contribute nothing in practice: dbt does not honour --full-refresh on a snapshot unless it is explicitly configured to, so was_full_refresh is false on every snapshot row recorded so far. The is_dbt_job filter is belt-and-braces: the join to node executions already restricts this to dbt jobs, but the explicit filter keeps it correct if that relationship's cross-filter direction ever changes.
 	measure 'Full-Refresh Premium $' =
 			CALCULATE (
 			    [Billed Amount $],
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    KEEPFILTERS ( 'dbt_node_executions'[was_full_refresh] = TRUE () ),
 			    KEEPFILTERS ( 'Fact'[is_dbt_job] = TRUE () )
 			)
@@ -687,14 +715,19 @@ table Measure
 		displayFolder: dbt\Quality
 		lineageTag: 7c2b347a-7397-4e34-a06f-4f63ab67914f
 
-	/// Rows written by dbt models, as reported by the adapter. Zero for views and for any metadata-only operation, so it is not a proxy for how much work a node did. Test rows are excluded: their rows_affected counts rows the test query returned, not rows written.
+	/// Rows written by dbt builds, as reported by the adapter. Zero for views and for any metadata-only operation, so it is not a proxy for how much work a node did. Snapshots report NULL here despite writing rows, so they are absent from this total in practice. Test rows are excluded: their rows_affected counts rows the test query returned, not rows written.
 	measure 'dbt Rows Written' =
-			-- node_type = Model is essential here, not tidiness: a test row's rows_affected is
+			-- node_class = Build is essential here, not tidiness: a test row's rows_affected is
 			-- the number of rows the test QUERY returned, which has nothing to do with rows
 			-- written to a table. Summing both together produces a meaningless number.
+			--
+			-- Snapshots are in scope but add nothing today: dbt records rows_affected as NULL on
+			-- a snapshot row even when the MERGE reports a row count in its message text, so this
+			-- total stays models-only in practice. Left in scope rather than filtered out so the
+			-- figure becomes correct on its own if the adapter starts populating the column.
 			CALCULATE (
 			    SUM ( 'dbt_node_executions'[rows_affected] ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
 		formatString: #,0
@@ -1027,36 +1060,32 @@ table Measure
 		displayFolder: Presentation\HTML
 		lineageTag: 1311a6a7-d55a-42d7-87b0-0c7f16d63090
 
-	/// Tooltip text for the Dimension slicer on the DBT Jobs > Explore tab. One brief line per DBT Dimension field parameter item, keyed on the order column so a label rename cannot detach it. Entry 19 (Node Type) is present in anticipation of that dimension being added to the parameter; it is harmless while unused.
+	/// Tooltip text for the Dimension slicer on the DBT Jobs > Explore tab. One brief line per DBT Dimension field parameter item, keyed on the order column so a label rename cannot detach it.
 	measure 'About this dimension' =
-			-- One line per DBT Dimension field-parameter item, keyed on the ORDER column rather
-			-- than the label, so renaming a label never silently detaches its tooltip. Any
-			-- entry added to the DBT Dimension parameter must be added here too or its pill
-			-- shows no tooltip at all.
 			SWITCH (
-			    SELECTEDVALUE ( 'DBT Dimension'[DBT Dimension Order] ),
-			    0, "Top-level folder under models/ - however the project organises its layers. One per model, so a cost or runtime split by layer adds up to the total.",
-			    1, "Second folder level under models/. Blank when the model sits directly in its layer folder rather than a subfolder.",
-			    2, "The BigQuery dataset the model's table or view is written to.",
-			    3, "The dbt model's name, matched to the model_name label on BigQuery jobs.",
-			    4, "How the model is built: table, view, incremental or ephemeral. Views are metadata-only, so rebuilding them is free.",
-			    5, "The dbt package the model comes from - your own project, or an installed one such as dbt_artifacts.",
-			    6, "A dbt tag carried by the model. A model can carry several, so a tag breakdown double counts.",
-			    7, "Buckets each execution by wall-clock time: Not run, 0-10s, 10-30s, 30-60s, 1-5 min, 5 min+. A skipped node reports zero runtime but never executed, so it sits in its own Not run band rather than counting as the fastest possible run.",
-			    8, "Raw dbt outcome of the execution. Models report success, error or skipped; tests report pass, fail, warn, error or skipped. A blank entry covers BigQuery jobs with no matching dbt node.",
-			    9, "The BigQuery table the job wrote to. Incremental temp tables fold into their model; ad-hoc SELECTs group as (anonymous SELECT result).",
-			    10, "The kind of SQL the job ran, e.g. SELECT, CREATE_TABLE_AS_SELECT or MERGE.",
-			    11, "Which kind of dbt node the job served: model, test, snapshot or operation. Taken from the job label, so it is available even for runs that wrote no dbt artifacts. Blank when dbt had no node context.",
-			    12, "The env label on the job - dev, uat or prod - as set by the run.",
-			    13, "The BigQuery region the job ran in. Price per TiB scanned differs by region.",
-			    14, "The service account or person that submitted the BigQuery job.",
-			    15, "The dbt project name from dbt_project.yml. Use it to separate projects that share one metadata dataset.",
-			    16, "The dbt target the run used, e.g. dev or uat.",
-			    17, "The dbt command that was invoked, e.g. build, run or test.",
-			    18, "One row per dbt run, labelled by submission time plus a fragment of its invocation id. Sort by cost to find the most expensive runs. A run covers everything it fired - model builds, tests and hooks alike - so the label names no command.",
-			    19, "Whether the row is a model execution or a test execution. Both live in one table now, so this is the switch between the two halves of a run.",
-			    BLANK ()
-			)
+						    SELECTEDVALUE ( 'DBT Dimension'[DBT Dimension Order] ),
+						    0, "Top-level folder under models/ - however the project organises its layers. One per model, so a cost or runtime split by layer adds up to the total.",
+						    1, "Second folder level under models/. Blank when the model sits directly in its layer folder rather than a subfolder.",
+						    2, "The BigQuery dataset the model's table or view is written to.",
+						    3, "The dbt model's name, matched to the model_name label on BigQuery jobs.",
+						    4, "How the model is built: table, view, incremental or ephemeral. Views are metadata-only, so rebuilding them is free.",
+						    5, "The dbt package the model comes from - your own project, or an installed one such as dbt_artifacts.",
+						    6, "A dbt tag carried by the model. A model can carry several, so a tag breakdown double counts.",
+						    7, "Buckets each execution by wall-clock time: Not run, 0-10s, 10-30s, 30-60s, 1-5 min, 5 min+. A skipped node reports zero runtime but never executed, so it sits in its own Not run band rather than counting as the fastest possible run.",
+						    8, "Raw dbt outcome of the execution. Models report success, error or skipped; tests report pass, fail, warn, error or skipped. A blank entry covers BigQuery jobs with no matching dbt node.",
+						    9, "Whether the row is a model execution or a test execution. Both live in one table now, so this is the switch between the two halves of a run.",
+						    10, "The BigQuery table the job wrote to. Incremental temp tables fold into their model; ad-hoc SELECTs group as (anonymous SELECT result).",
+						    11, "The kind of SQL the job ran, e.g. SELECT, CREATE_TABLE_AS_SELECT or MERGE.",
+						    12, "Which kind of dbt node the job served: model, test, snapshot or operation. Taken from the job label, so it is available even for runs that wrote no dbt artifacts. Blank when dbt had no node context.",
+						    13, "The env label on the job - dev, uat or prod - as set by the run.",
+						    14, "The BigQuery region the job ran in. Price per TiB scanned differs by region.",
+						    15, "The service account or person that submitted the BigQuery job.",
+						    16, "The dbt project name from dbt_project.yml. Use it to separate projects that share one metadata dataset.",
+						    17, "The dbt target the run used, e.g. dev or uat.",
+						    18, "The dbt command that was invoked, e.g. build, run or test.",
+						    19, "One row per dbt run, labelled by submission time plus a fragment of its invocation id. Sort by cost to find the most expensive runs. A run covers everything it fired - model builds, tests and hooks alike - so the label names no command.",
+						    BLANK ()
+						)
 		isHidden
 		displayFolder: dbt\Help
 		lineageTag: b5d92628-32c2-49bb-817b-d379381eac25
@@ -1939,15 +1968,19 @@ table Measure
 		displayFolder: dbt\Quality
 		lineageTag: ec857457-578b-459d-93bd-7fc321eaa888
 
-	/// Distinct models this selection tried to build - success, error and skipped together. The denominator for 'built X of Y': on the 28 Jul 13:30 run that reads 3 of 15. Note that at a multi-run grain it equals dbt Models Built whenever every model succeeded at least once in the window, because both count distinct nodes rather than executions.
+	/// Distinct models and snapshots this selection tried to build - success, error and skipped together. The denominator for 'built X of Y'. Note that at a multi-run grain it equals dbt Models Built whenever every node succeeded at least once in the window, because both count distinct nodes rather than executions.
 	measure 'dbt Models Attempted' =
 			-- DISTINCTCOUNT of node_id, not COUNTROWS, so it pairs correctly with
 			-- [dbt Models Built], which also counts distinct nodes. Counting rows here would
 			-- give "142 of 213" at the grand total - a model rebuilt daily would inflate the
 			-- denominator but not the numerator, making a healthy project look broken.
+			--
+			-- node_class = "Build" must match [dbt Models Built] exactly. If one side counted
+			-- snapshots and the other did not, 'built X of Y' would be comparing two different
+			-- populations and could even report more built than attempted.
 			CALCULATE (
 			    DISTINCTCOUNT ( 'dbt_node_executions'[node_id] ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
 		formatString: #,0
@@ -1987,11 +2020,16 @@ table Measure
 		displayFolder: dbt\Quality
 		lineageTag: ac30a757-9b40-4dd0-94e2-1da95aba3191
 
-	/// Model executions dbt skipped. Filters raw status rather than status_group so it means exactly what dbt recorded on a model row. Pairs with Tests Skipped to split Nodes Skipped into its two halves.
+	/// Build executions dbt skipped - models and snapshots. Filters raw status rather than status_group so it means exactly what dbt recorded on the row. Pairs with Tests Skipped to split Nodes Skipped into its two halves.
 	measure 'Models Skipped' =
+			-- node_class = "Build" is what keeps this measure's pairing honest. Models Skipped
+			-- plus Tests Skipped must equal Nodes Skipped, which counts every node type. Before
+			-- snapshots joined the union that held by accident, because Model and Test were the
+			-- only two types; a Model-only filter here would now leave skipped snapshots in
+			-- neither half and the two would quietly stop summing to the whole.
 			CALCULATE (
 			    COUNTROWS ( 'dbt_node_executions' ),
-			    KEEPFILTERS ( 'dbt_node_executions'[node_type] = "Model" ),
+			    KEEPFILTERS ( 'dbt_node_executions'[node_class] = "Build" ),
 			    KEEPFILTERS ( 'dbt_node_executions'[status] = "skipped" ),
 			    USERELATIONSHIP ( 'dbt_node_executions'[run_date], 'dim_Date'[Date] )
 			)
@@ -2271,7 +2309,6 @@ table Measure
 
 	partition Measure = m
 		mode: import
-		queryGroup: Measure
 		source =
 				let
 				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WMlSKjQUA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),

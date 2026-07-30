@@ -1,4 +1,4 @@
-/// Bridge of dbt tags at node grain, from the latest definition of each model. Use for filtering only: a model can carry several tags, so any total broken out by tag double counts. Use dbt_models[layer] for additive breakdowns.
+/// Bridge of dbt tags at node grain, from the latest definition of each model. Use for filtering only: a model can carry several tags, so any total broken out by tag double counts. Use dbt_models[layer] for additive breakdowns. One tag here is synthesized rather than sourced: every snapshot gets the tag 'snapshot', because dim_dbt__snapshots records no tags array and snapshots would otherwise be silently excluded from any tag selection. A snapshot's real dbt-config tags are NOT present, so do not reconcile this table against the project's tags for snapshot nodes.
 table dbt_model_tags
 	lineageTag: c0b2a021-08d7-412e-ba42-aabc88d01ed1
 
@@ -9,7 +9,7 @@ table dbt_model_tags
 		summarizeBy: none
 		sourceColumn: node_id
 
-	/// One dbt tag carried by the model.
+	/// One dbt tag carried by the model. For a snapshot this is always the synthesized value 'snapshot' - see the table description.
 	column tag
 		dataType: string
 		lineageTag: 8e254ab5-ee65-4252-bf75-b4cff8d78da6
@@ -18,13 +18,21 @@ table dbt_model_tags
 
 	partition dbt_model_tags = m
 		mode: import
-		queryGroup: Dim
 		source =
 				let
 				    _sql =
 				        "WITH latest AS (SELECT node_id, tags FROM `" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix & "dim_dbt__models`" &
+				        " QUALIFY ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY run_started_at DESC) = 1)," &
+				        " latest_snap AS (SELECT node_id FROM `" & p_DbtMeta_Project & "." & p_DbtMeta_Dataset & "." & p_DbtMeta_Prefix & "dim_dbt__snapshots`" &
 				        " QUALIFY ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY run_started_at DESC) = 1)" &
-				        " SELECT node_id, tag FROM latest, UNNEST(tags) AS tag",
+				        " SELECT node_id, tag FROM latest, UNNEST(tags) AS tag" &
+				        // Synthesized, not sourced. dim_dbt__snapshots records no tags array at all, so without
+				        // this a snapshot is unreachable from the Tag slicer - selecting any tag would silently
+				        // exclude every snapshot rather than return nothing. Whatever tags the snapshot actually
+				        // carries in its dbt config are NOT here; this is a single report-side handle, so treat
+				        // it as a filter for 'is a snapshot' and not as dbt metadata to reconcile against.
+				        " UNION ALL" &
+				        " SELECT node_id, 'snapshot' AS tag FROM latest_snap",
 				    _bq = () => Value.NativeQuery(Source_BQ{[Name = bq_project, Kind = "Database"]}[Data], _sql, null, [EnableFolding = true]),
 				    _csv = () => fn_ReadSampleCsv("dbt_model_tags.csv", {
 				            {"node_id", type text}, {"tag", type text}
@@ -32,4 +40,6 @@ table dbt_model_tags
 				    Source = if p_DataSource = "SampleCSV" then _csv() else _bq()
 				in
 				    Source
+
+	annotation PBI_ResultType = Table
 
