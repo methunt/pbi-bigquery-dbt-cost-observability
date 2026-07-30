@@ -46,6 +46,21 @@
               "nativeQueryRef": "Month",
               "active": true,
               "displayName": "Month"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_Date"
+                    }
+                  },
+                  "Property": "Day"
+                }
+              },
+              "queryRef": "dim_Date.Day",
+              "nativeQueryRef": "Day",
+              "active": true
             }
           ]
         },
@@ -413,7 +428,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
             },
