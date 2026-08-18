@@ -114,10 +114,10 @@ def hero(p: dict, s: dict) -> str:
     # here ("Power BI semantic model - runs on committed sample data, no cloud
     # account needed") - dropped because it said nothing the shields.io badge
     # row below the hero doesn't already say.
-    eyebrow_y = 74
-    rule_y = eyebrow_y + 34
-    sub1_y = rule_y + 38
-    height = sub1_y + 40
+    eyebrow_y = 54
+    rule_y = eyebrow_y + 28
+    sub1_y = rule_y + 34
+    height = sub1_y + 30
 
     template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 {height}" width="1200" height="{height}" role="img" aria-label="BigQuery and dbt Cost Observability">
   <style>
