@@ -110,12 +110,14 @@ def hero(p: dict, s: dict) -> str:
     #
     # Layout is computed off a handful of row heights rather than hard-coded,
     # so bumping a font size only ever means changing the constant it is
-    # actually driven by.
+    # actually driven by. There used to be a second, monospace subtitle line
+    # here ("Power BI semantic model - runs on committed sample data, no cloud
+    # account needed") - dropped because it said nothing the shields.io badge
+    # row below the hero doesn't already say.
     eyebrow_y = 74
     rule_y = eyebrow_y + 34
     sub1_y = rule_y + 38
-    sub2_y = sub1_y + 36
-    height = sub2_y + 40
+    height = sub1_y + 40
 
     template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 {height}" width="1200" height="{height}" role="img" aria-label="BigQuery and dbt Cost Observability">
   <style>
@@ -155,10 +157,6 @@ def hero(p: dict, s: dict) -> str:
   <g class="rise" style="animation-delay:.2s">
     <text x="40" y="{sub1_y}" font-family="__FONT__" font-size="25"
           fill="__MUTED__">Two halves: what the whole warehouse costs, and what dbt costs inside it.</text>
-  </g>
-  <g class="rise" style="animation-delay:.25s">
-    <text x="40" y="{sub2_y}" font-family="__MONO__" font-size="19"
-          fill="__MUTED__">Power BI semantic model  ·  runs on committed sample data, no cloud account needed</text>
   </g>
 </svg>
 """
