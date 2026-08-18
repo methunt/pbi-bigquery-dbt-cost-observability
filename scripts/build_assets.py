@@ -104,7 +104,9 @@ def hero(p: dict, s: dict) -> str:
     # not pixels inside an <img>. The KPI tiles this banner used to carry are
     # gone too: four numbers with no axis to compare them against read as
     # decoration, not evidence - the real figures live in the tables below,
-    # in context, and in the new "where your money goes" strip.
+    # in context, and in the new "where your money goes" strip. No badge pills
+    # either: the README's own shields.io badge row sits right under this
+    # image, so the same labels baked in twice said nothing new.
     #
     # Layout is computed off a handful of row heights rather than hard-coded,
     # so bumping a font size only ever means changing the constant it is
@@ -113,23 +115,7 @@ def hero(p: dict, s: dict) -> str:
     rule_y = eyebrow_y + 34
     sub1_y = rule_y + 38
     sub2_y = sub1_y + 36
-    badge_y = sub2_y + 36
-    badge_h = 36
-    height = badge_y + badge_h + 26
-
-    badges = ["Power BI  ·  PBIP", "BigQuery", "dbt", "synthetic sample data"]
-    bx = 40
-    badge_svg = []
-    for i, b in enumerate(badges):
-        bw = 28 + len(b) * 9.6
-        badge_svg.append(f"""
-  <g class="rise" style="animation-delay:{0.85 + i * 0.07:.2f}s">
-    <rect x="{bx:.0f}" y="{badge_y}" width="{bw:.0f}" height="{badge_h}" rx="{badge_h // 2}"
-          fill="__CARD2__" stroke="__BORDER__"/>
-    <text x="{bx + bw / 2:.0f}" y="{badge_y + badge_h // 2 + 6}" text-anchor="middle" font-family="__FONT__"
-          font-size="17.5" fill="__MUTED__">{esc(b)}</text>
-  </g>""")
-        bx += bw + 12
+    height = sub2_y + 40
 
     template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 {height}" width="1200" height="{height}" role="img" aria-label="BigQuery and dbt Cost Observability">
   <style>
@@ -174,7 +160,6 @@ def hero(p: dict, s: dict) -> str:
     <text x="40" y="{sub2_y}" font-family="__MONO__" font-size="19"
           fill="__MUTED__">Power BI semantic model  ·  runs on committed sample data, no cloud account needed</text>
   </g>
-{''.join(badge_svg)}
 </svg>
 """
     return paint(template, p)
