@@ -1,6 +1,9 @@
 <!-- The hero doubles as the call to action. GitHub strips <iframe>, so the live
-     report cannot be embedded in the page - it has to be a link out. -->
+     report cannot be embedded in the page - it has to be a link out. The <h1>
+     is real text, not pixels in the SVG, so the project name is something a
+     search engine and a screen reader both get. -->
 <a href="https://app.powerbi.com/view?r=eyJrIjoiYWUyY2IyOWQtNWVlOS00Y2JjLWI3MmMtZGE1N2ZhNDVhZDVjIiwidCI6IjExMWJhNTQ2LWQ1ZjQtNDgwYS05OGE3LWRmYjYzYjgzMGZiMSIsImMiOjEwfQ%3D%3D">
+  <h1>BigQuery + dbt Cost Observability</h1>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
     <img alt="BigQuery + dbt Cost Observability — two halves: what the whole warehouse costs, and what dbt costs inside it" src="assets/hero-light.svg">
@@ -13,6 +16,7 @@
   <img alt="dbt" src="https://img.shields.io/badge/dbt-dbt__artifacts-FF694B?style=flat-square&logo=dbt&logoColor=white">
   <img alt="Sample data included" src="https://img.shields.io/badge/sample%20data-included,%20no%20cloud%20account-059669?style=flat-square">
   <img alt="Pages" src="https://img.shields.io/badge/report-7%20pages-7C3AED?style=flat-square">
+  <img alt="Licence MIT" src="https://img.shields.io/badge/licence-MIT-0891B2?style=flat-square">
 </p>
 
 A Power BI semantic model over BigQuery's own job history. It answers two questions that cloud billing cannot: **where did the warehouse spend go**, and **which dbt model, snapshot, test or hook spent it**.
@@ -20,17 +24,21 @@ A Power BI semantic model over BigQuery's own job history. It answers two questi
 | | | |
 |---|---|---|
 | 🔎 | **[Part 1 · Query & Usage Insights](#-part-1)** | Everything running on the warehouse — who spends, on what, how long it takes, how much was cache, and which statements are worth rewriting. **No dbt required.** |
-| 🧱 | **[Part 2 · dbt on BigQuery](#-part-2)** | The transformation layer — what each model costs, which runs are healthy, what broke, all joined back to BigQuery billing. Needs the **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/Data-Engineering/tree/main/dbt%20Template%20for%20BigQuery%20Cost%20Observability%20PBI%20Report)** wired up. |
+| 🧱 | **[Part 2 · dbt on BigQuery](#-part-2)** | The transformation layer — what each model costs, which runs are healthy, what broke, all joined back to BigQuery billing. Needs the **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/dbt-bigquery-cost-observability-template)** wired up. |
 | ▶️ | **[Part 3 · Run it yourself](#-part-3)** | Clone, set the parameters, refresh. Works offline against committed sample data. |
 
 ---
 
-## 🎯 The three problems it solves
+## 🎯 Where your money goes
 
-| 1️⃣ Billing is one number | 2️⃣ It tells you what to fix first | 3️⃣ It separates avoidable spend from real spend |
-|---|---|---|
-| Cloud billing tells you the project cost $X today. It cannot tell you which user, which query, or which model. | Cost is never spread evenly, so optimisation effort should not be either. | Some of the bill buys you nothing, and that part is the cheapest to remove — no rewriting required. |
-| **Part 1** breaks the bill down by user, statement, region and hour. **Part 2** breaks it down by dbt model, snapshot, test and hook — including post-hook jobs that dbt's own metadata never records. | In the sample month the **three most expensive target tables carry about two-thirds of the dbt bill**, and **service accounts outspend every human combined**. Both are one glance, not an investigation. | Cache hits bill nothing, BI Engine acceleration cuts billed bytes, and small queries pay a 10 MB floor whether they need it or not. The report shows how much of your spend is each — plus the `dev` / `uat` / `prod` split, which is where surprises usually live. |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/strip-why-dark.svg">
+  <img alt="Where your money goes — three reasons this report earns its place: see where every dollar goes, know what to fix first, and stop paying for spend that buys nothing" src="assets/strip-why-light.svg">
+</picture>
+
+<br>
+
+**Part 1** breaks the bill down by user, statement, region and hour; **Part 2** breaks it down by dbt model, snapshot, test and hook — including post-hook jobs that dbt's own metadata never records. In the sample month the **three most expensive target tables carry about two-thirds of the dbt bill**, and **service accounts outspend every human combined** — both one glance, not an investigation. Cache hits, BI Engine acceleration and the 10 MB billing floor each decide how much of the bill was avoidable, split further by `dev` / `uat` / `prod`, which is where surprises usually live.
 
 ---
 
@@ -59,10 +67,10 @@ Two live sources, one committed offline source, and a single parameter that swit
 ---
 
 <a id="-part-1"></a>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/section-query-dark.svg">
-  <img alt="Part 1 — Query & Usage Insights. Every BigQuery job: who spends, on what, how long, and how much was cache. No dbt required." src="assets/section-query-light.svg">
-</picture>
+
+## Part 1 — Query & Usage Insights
+
+<img alt="Every BigQuery job: who spends, on what, how long, and how much was cache. No dbt required." src="assets/section-query-light.svg">
 
 ![Query & Usage Insights, cycling between the Performance Analysis and Explore tabs](assets/tour-query-insights.gif)
 
@@ -111,13 +119,13 @@ Right-click any pattern or job and drill through to a single statement: the SQL 
 ---
 
 <a id="-part-2"></a>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/section-dbt-dark.svg">
-  <img alt="Part 2 — dbt on BigQuery. What the transformation layer costs, how much it builds, and whether it is healthy. Needs dbt_artifacts." src="assets/section-dbt-light.svg">
-</picture>
+
+## Part 2 — dbt on BigQuery
+
+<img alt="What the transformation layer costs, how much it builds, and whether it is healthy. Needs dbt_artifacts." src="assets/section-dbt-light.svg">
 
 > [!TIP]
-> Needs `dbt_artifacts` and job labels already wired up in your dbt project — the **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/Data-Engineering/tree/main/dbt%20Template%20for%20BigQuery%20Cost%20Observability%20PBI%20Report)** sets both up for you.
+> Needs `dbt_artifacts` and job labels already wired up in your dbt project — the **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/dbt-bigquery-cost-observability-template)** sets both up for you.
 
 ![dbt on BigQuery, cycling between the Overview and Explore tabs](assets/tour-dbt-jobs.gif)
 
@@ -181,10 +189,10 @@ The dbt equivalent of Part 1's Explore — **20 dimensions × 25 metrics**, incl
 ---
 
 <a id="-part-3"></a>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/section-setup-dark.svg">
-  <img alt="Part 3 — Run it yourself. Clone it, point it at the sample data or your own BigQuery, and refresh. Offline by default." src="assets/section-setup-light.svg">
-</picture>
+
+## Part 3 — Run it yourself
+
+<img alt="Clone it, point it at the sample data or your own BigQuery, and refresh. Offline by default." src="assets/section-setup-light.svg">
 
 ```bash
 git clone https://github.com/methunt/PowerBi.git
@@ -196,7 +204,7 @@ cd "PowerBi/Bigquery & Dbt Cost Observability"   # quotes matter - the & is a sh
 | 1. Open `powerbi/BigQuery dbt Cost Observability.pbip`<br>2. Set **`p_SampleDataPath`** to this folder's `sample-data`<br>3. Refresh<br><br>`p_DataSource` already defaults to `SampleCSV`. | 1. Set **`p_DataSource`** to `BigQuery`<br>2. Fill in the parameters below<br>3. Refresh and authenticate<br><br>Want **Part 1 only**? Set `bq_project` and `p_Regions` and refresh — the dbt pages stay empty, nothing errors. |
 
 > [!IMPORTANT]
-> **Prerequisite for 🧱 Part 2:** this report expects `dbt_artifacts` to be installed and the job labels described below to already be in place. **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/Data-Engineering/tree/main/dbt%20Template%20for%20BigQuery%20Cost%20Observability%20PBI%20Report)** is a companion dbt project that wires both up out of the box — start there if your dbt project does not yet emit them.
+> **Prerequisite for 🧱 Part 2:** this report expects `dbt_artifacts` to be installed and the job labels described below to already be in place. **[dbt Template for BigQuery Cost Observability](https://github.com/methunt/dbt-bigquery-cost-observability-template)** is a companion dbt project that wires both up out of the box — start there if your dbt project does not yet emit them.
 
 ### Parameters
 
@@ -276,6 +284,10 @@ python scripts/build_page_assets.py      # crops captures, builds the tours  (Pi
 ```
 
 Every graphic that quotes a figure reads it from `sample-data/summary.json`, written by the generator — change the data and those graphics follow, so they cannot drift out of agreement. The dataflow diagram is the deliberate exception: it carries no figures at all, because its subject is the shape of the pipeline, and regenerating the sample month should not produce a diff in it.
+
+### 📄 Licence
+
+[MIT](LICENSE). The sample data is synthetic: no production data, table names or addresses appear anywhere in this repository.
 
 ### 📁 Repo layout
 

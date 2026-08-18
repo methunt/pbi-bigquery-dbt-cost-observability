@@ -1,127 +1,69 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 366" width="1200" height="366" role="img" aria-label="BigQuery and dbt Cost Observability">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" width="1200" height="280" role="img" aria-label="BigQuery and dbt Cost Observability">
   <style>
     /* Entrance animations move things but never fade them. A renderer that does
        not run CSS - GitHub's mobile app, an email digest, a PDF export - would
        otherwise show an empty banner, because the from-state of a fade is
        invisible and fill-mode `both` holds it for the whole delay. Every element
        here is fully legible with the animation stripped out. */
-    .tile { animation: rise .55s cubic-bezier(.2,.7,.3,1) both; }
-    .badge { animation: rise .45s ease-out both; }
-    .ttl { animation: rise .5s ease-out both; }
+    .rise { animation: rise .55s cubic-bezier(.2,.7,.3,1) both; }
     .rule { animation: sweep .9s cubic-bezier(.2,.7,.3,1) .15s; }
-    .sheen { animation: sheen 4.5s ease-in-out infinite 1.4s; }
     .blob { animation: drift 14s ease-in-out infinite alternate; }
-    .blob2 { animation: drift2 18s ease-in-out infinite alternate; }
     @keyframes rise { from { transform: translateY(9px) }
                        to   { transform: translateY(0) } }
     @keyframes sweep { from { width: 0 } to { width: 1120px } }
-    @keyframes sheen { 0%,100% { transform: translateX(-160px); opacity: 0 }
-                        45% { opacity: .7 }
-                        90% { transform: translateX(1120px); opacity: 0 } }
     @keyframes drift { from { transform: translate(0,0) } to { transform: translate(64px,-22px) } }
-    @keyframes drift2 { from { transform: translate(0,0) } to { transform: translate(-52px,18px) } }
     @media (prefers-reduced-motion: reduce) {
-      .tile,.badge,.ttl,.rule,.sheen,.blob,.blob2 { animation: none }
+      .rise,.rule,.blob { animation: none }
     }
   </style>
   <defs>
-    <linearGradient id="sheenG" x1="0" x2="1">
-      <stop offset="0%"   stop-color="#3B82F6" stop-opacity="0"/>
-      <stop offset="50%"  stop-color="#3B82F6" stop-opacity="1"/>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.16"/>
       <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
-    </linearGradient>
-    <clipPath id="ruleClip"><rect x="40" y="164" width="1120" height="3" rx="1.5"/></clipPath>
-    <!-- Heavy blur turns the two circles into an ambient wash. Unblurred they
-         read as hard discs sitting on top of the text. -->
-    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="58"/>
-    </filter>
+    </radialGradient>
   </defs>
 
-  <rect width="1200" height="330" fill="#0D1117"/>
-  <g filter="url(#soft)" opacity="0.16">
-    <circle class="blob"  cx="1060" cy="42"  r="118" fill="#3B82F6"/>
-    <circle class="blob2" cx="96"   cy="312" r="92"  fill="#8B5CF6"/>
+  <rect width="1200" height="280" rx="16" fill="#161B22"/>
+  <rect x="0.5" y="0.5" width="1199" height="279" rx="15.5" fill="none" stroke="#30363D"/>
+  <rect width="8" height="280" rx="4" fill="#3B82F6"/>
+  <g class="blob"><circle cx="1010" cy="70" r="240" fill="url(#glow)"/></g>
+
+  <g class="rise">
+    <text x="40" y="74" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="22" font-weight="700"
+          letter-spacing="3" fill="#3B82F6">BIGQUERY  ⇄  DBT</text>
+  </g>
+  <rect class="rule" x="40" y="108" width="1120" height="2" rx="1" fill="#30363D"/>
+  <g class="rise" style="animation-delay:.2s">
+    <text x="40" y="146" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="25"
+          fill="#8B949E">Two halves: what the whole warehouse costs, and what dbt costs inside it.</text>
+  </g>
+  <g class="rise" style="animation-delay:.25s">
+    <text x="40" y="182" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="19"
+          fill="#8B949E">Power BI semantic model  ·  runs on committed sample data, no cloud account needed</text>
   </g>
 
-  <g class="ttl">
-    <text x="40" y="80" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="38" font-weight="700"
-          fill="#E6EDF3" letter-spacing="-0.8">BigQuery + dbt Cost Observability</text>
-  </g>
-  <!-- The strapline carries the whole point of the repo, so it is sized and
-       coloured to be read, not to be decorative: #E6EDF3 at 17px rather than a
-       muted 14.5. The line under it is supporting detail and sits at #8B949E -
-       #484F58 was too low-contrast to read in either palette, and worse on
-       dark, where faint is darker than muted rather than lighter. -->
-  <g class="ttl" style="animation-delay:.1s">
-    <text x="40" y="116" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="20" fill="#E6EDF3">
-      Two halves: what the whole warehouse costs, and what dbt costs inside it.
-    </text>
-    <text x="40" y="146" font-family="ui-monospace,SFMono-Regular,'SF Mono',Consolas,'Liberation Mono',monospace" font-size="15" fill="#8B949E">
-      Power BI semantic model  ·  runs on committed sample data, no cloud account needed
-    </text>
-  </g>
-
-  <rect class="rule" x="40" y="164" width="1120" height="3" rx="1.5" fill="#3B82F6" opacity="0.85"/>
-  <g clip-path="url(#ruleClip)">
-    <rect class="sheen" x="40" y="164" width="160" height="3" fill="url(#sheenG)"/>
-  </g>
-
-  <g class="tile" style="animation-delay:0.35s">
-    <rect x="40" y="190" width="268" height="100" rx="10" fill="#161B22" stroke="#30363D"/>
-    <rect x="40" y="190" width="4" height="100" rx="2" fill="#3B82F6"/>
-    <text x="62" y="240" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="35" font-weight="700"
-          fill="#E6EDF3" letter-spacing="-0.5">$662.98</text>
-    <text x="62" y="268" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15.5"
-          fill="#8B949E">billed across one month</text>
-  </g>
-  <g class="tile" style="animation-delay:0.46s">
-    <rect x="324" y="190" width="268" height="100" rx="10" fill="#161B22" stroke="#30363D"/>
-    <rect x="324" y="190" width="4" height="100" rx="2" fill="#22D3EE"/>
-    <text x="346" y="240" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="35" font-weight="700"
-          fill="#E6EDF3" letter-spacing="-0.5">4,894</text>
-    <text x="346" y="268" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15.5"
-          fill="#8B949E">BigQuery jobs, all types</text>
-  </g>
-  <g class="tile" style="animation-delay:0.57s">
-    <rect x="608" y="190" width="268" height="100" rx="10" fill="#161B22" stroke="#30363D"/>
-    <rect x="608" y="190" width="4" height="100" rx="2" fill="#8B5CF6"/>
-    <text x="630" y="240" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="35" font-weight="700"
-          fill="#E6EDF3" letter-spacing="-0.5">$470.60</text>
-    <text x="630" y="268" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15.5"
-          fill="#8B949E">71.0% of the bill is dbt</text>
-  </g>
-  <g class="tile" style="animation-delay:0.68s">
-    <rect x="892" y="190" width="268" height="100" rx="10" fill="#161B22" stroke="#30363D"/>
-    <rect x="892" y="190" width="4" height="100" rx="2" fill="#EF4444"/>
-    <text x="914" y="240" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="35" font-weight="700"
-          fill="#E6EDF3" letter-spacing="-0.5">+27%</text>
-    <text x="914" y="268" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15.5"
-          fill="#8B949E">if script children were summed</text>
-  </g>
-
-  <g class="badge" style="animation-delay:0.85s">
-    <rect x="40" y="312" width="167" height="32" rx="16"
+  <g class="rise" style="animation-delay:0.85s">
+    <rect x="40" y="218" width="191" height="36" rx="18"
           fill="#1C2128" stroke="#30363D"/>
-    <text x="123" y="333" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-          font-size="15.5" fill="#8B949E">Power BI  ·  PBIP</text>
+    <text x="136" y="242" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+          font-size="17.5" fill="#8B949E">Power BI  ·  PBIP</text>
   </g>
-  <g class="badge" style="animation-delay:0.92s">
-    <rect x="217" y="312" width="91" height="32" rx="16"
+  <g class="rise" style="animation-delay:0.92s">
+    <rect x="243" y="218" width="105" height="36" rx="18"
           fill="#1C2128" stroke="#30363D"/>
-    <text x="262" y="333" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-          font-size="15.5" fill="#8B949E">BigQuery</text>
+    <text x="296" y="242" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+          font-size="17.5" fill="#8B949E">BigQuery</text>
   </g>
-  <g class="badge" style="animation-delay:0.99s">
-    <rect x="318" y="312" width="49" height="32" rx="16"
+  <g class="rise" style="animation-delay:0.99s">
+    <rect x="360" y="218" width="57" height="36" rx="18"
           fill="#1C2128" stroke="#30363D"/>
-    <text x="343" y="333" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-          font-size="15.5" fill="#8B949E">dbt</text>
+    <text x="388" y="242" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+          font-size="17.5" fill="#8B949E">dbt</text>
   </g>
-  <g class="badge" style="animation-delay:1.06s">
-    <rect x="377" y="312" width="200" height="32" rx="16"
+  <g class="rise" style="animation-delay:1.06s">
+    <rect x="429" y="218" width="230" height="36" rx="18"
           fill="#1C2128" stroke="#30363D"/>
-    <text x="477" y="333" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-          font-size="15.5" fill="#8B949E">synthetic sample data</text>
+    <text x="544" y="242" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+          font-size="17.5" fill="#8B949E">synthetic sample data</text>
   </g>
 </svg>

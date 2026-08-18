@@ -64,6 +64,27 @@ def esc(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def esc_attr(s: str) -> str:
+    return esc(s).replace('"', "&quot;")
+
+
+def wrap(text: str, width: int) -> list[str]:
+    """Greedy character-budget wrap - approximate, but banner copy is short
+    enough that a character budget is close enough without real font metrics."""
+    lines: list[str] = []
+    line = ""
+    for word in text.split():
+        candidate = f"{line} {word}".strip()
+        if len(candidate) > width and line:
+            lines.append(line)
+            line = word
+        else:
+            line = candidate
+    if line:
+        lines.append(line)
+    return lines
+
+
 def paint(template: str, p: dict) -> str:
     """Substitute __TOKEN__ placeholders. Used instead of str.format so the CSS
     braces in the templates need no escaping."""
@@ -78,118 +99,81 @@ def paint(template: str, p: dict) -> str:
 # --------------------------------------------------------------------------- #
 
 def hero(p: dict, s: dict) -> str:
-    overstate = round((s["spend_double_counted"] - s["spend_total"]) / s["spend_total"] * 100)
-    dbt_pct = round(s["spend_dbt"] / s["spend_total"] * 100, 1)
-
-    # Two tiles for the warehouse-wide half, one for the dbt half, one for the
-    # counting trap - the same balance the README is structured around. A banner
-    # of four dbt figures would misdescribe a report that is half about
-    # everything else running on the warehouse.
-    kpis = [
-        (f"${s['spend_total']:,.2f}", "billed across one month", "primary"),
-        (f"{s['jobs_total']:,}", "BigQuery jobs, all types", "cyan"),
-        (f"${s['spend_dbt']:,.2f}", f"{dbt_pct}% of the bill is dbt", "violet"),
-        (f"+{overstate}%", "if script children were summed", "bad"),
-    ]
-
-    tiles = []
-    x = 40
-    for i, (value, label, colour) in enumerate(kpis):
-        w = 268
-        tiles.append(f"""
-  <g class="tile" style="animation-delay:{0.35 + i * 0.11:.2f}s">
-    <rect x="{x}" y="190" width="{w}" height="100" rx="10" fill="__CARD__" stroke="__BORDER__"/>
-    <rect x="{x}" y="190" width="4" height="100" rx="2" fill="__{colour.upper()}__"/>
-    <text x="{x + 22}" y="240" font-family="__FONT__" font-size="35" font-weight="700"
-          fill="__TEXT__" letter-spacing="-0.5">{esc(value)}</text>
-    <text x="{x + 22}" y="268" font-family="__FONT__" font-size="15.5"
-          fill="__MUTED__">{esc(label)}</text>
-  </g>""")
-        x += w + 16
+    # No title baked in here - the README carries a real <h1> above this asset
+    # so the project name is text a search engine and a screen reader both get,
+    # not pixels inside an <img>. The KPI tiles this banner used to carry are
+    # gone too: four numbers with no axis to compare them against read as
+    # decoration, not evidence - the real figures live in the tables below,
+    # in context, and in the new "where your money goes" strip.
+    #
+    # Layout is computed off a handful of row heights rather than hard-coded,
+    # so bumping a font size only ever means changing the constant it is
+    # actually driven by.
+    eyebrow_y = 74
+    rule_y = eyebrow_y + 34
+    sub1_y = rule_y + 38
+    sub2_y = sub1_y + 36
+    badge_y = sub2_y + 36
+    badge_h = 36
+    height = badge_y + badge_h + 26
 
     badges = ["Power BI  ·  PBIP", "BigQuery", "dbt", "synthetic sample data"]
     bx = 40
     badge_svg = []
     for i, b in enumerate(badges):
-        bw = 24 + len(b) * 8.4
+        bw = 28 + len(b) * 9.6
         badge_svg.append(f"""
-  <g class="badge" style="animation-delay:{0.85 + i * 0.07:.2f}s">
-    <rect x="{bx:.0f}" y="312" width="{bw:.0f}" height="32" rx="16"
+  <g class="rise" style="animation-delay:{0.85 + i * 0.07:.2f}s">
+    <rect x="{bx:.0f}" y="{badge_y}" width="{bw:.0f}" height="{badge_h}" rx="{badge_h // 2}"
           fill="__CARD2__" stroke="__BORDER__"/>
-    <text x="{bx + bw / 2:.0f}" y="333" text-anchor="middle" font-family="__FONT__"
-          font-size="15.5" fill="__MUTED__">{esc(b)}</text>
+    <text x="{bx + bw / 2:.0f}" y="{badge_y + badge_h // 2 + 6}" text-anchor="middle" font-family="__FONT__"
+          font-size="17.5" fill="__MUTED__">{esc(b)}</text>
   </g>""")
-        bx += bw + 10
+        bx += bw + 12
 
-    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 366" width="1200" height="366" role="img" aria-label="BigQuery and dbt Cost Observability">
+    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 {height}" width="1200" height="{height}" role="img" aria-label="BigQuery and dbt Cost Observability">
   <style>
     /* Entrance animations move things but never fade them. A renderer that does
        not run CSS - GitHub's mobile app, an email digest, a PDF export - would
        otherwise show an empty banner, because the from-state of a fade is
        invisible and fill-mode `both` holds it for the whole delay. Every element
        here is fully legible with the animation stripped out. */
-    .tile {{ animation: rise .55s cubic-bezier(.2,.7,.3,1) both; }}
-    .badge {{ animation: rise .45s ease-out both; }}
-    .ttl {{ animation: rise .5s ease-out both; }}
+    .rise {{ animation: rise .55s cubic-bezier(.2,.7,.3,1) both; }}
     .rule {{ animation: sweep .9s cubic-bezier(.2,.7,.3,1) .15s; }}
-    .sheen {{ animation: sheen 4.5s ease-in-out infinite 1.4s; }}
     .blob {{ animation: drift 14s ease-in-out infinite alternate; }}
-    .blob2 {{ animation: drift2 18s ease-in-out infinite alternate; }}
     @keyframes rise {{ from {{ transform: translateY(9px) }}
                        to   {{ transform: translateY(0) }} }}
     @keyframes sweep {{ from {{ width: 0 }} to {{ width: 1120px }} }}
-    @keyframes sheen {{ 0%,100% {{ transform: translateX(-160px); opacity: 0 }}
-                        45% {{ opacity: .7 }}
-                        90% {{ transform: translateX(1120px); opacity: 0 }} }}
     @keyframes drift {{ from {{ transform: translate(0,0) }} to {{ transform: translate(64px,-22px) }} }}
-    @keyframes drift2 {{ from {{ transform: translate(0,0) }} to {{ transform: translate(-52px,18px) }} }}
     @media (prefers-reduced-motion: reduce) {{
-      .tile,.badge,.ttl,.rule,.sheen,.blob,.blob2 {{ animation: none }}
+      .rise,.rule,.blob {{ animation: none }}
     }}
   </style>
   <defs>
-    <linearGradient id="sheenG" x1="0" x2="1">
-      <stop offset="0%"   stop-color="__PRIMARY__" stop-opacity="0"/>
-      <stop offset="50%"  stop-color="__PRIMARY__" stop-opacity="1"/>
-      <stop offset="100%" stop-color="__PRIMARY__" stop-opacity="0"/>
-    </linearGradient>
-    <clipPath id="ruleClip"><rect x="40" y="164" width="1120" height="3" rx="1.5"/></clipPath>
-    <!-- Heavy blur turns the two circles into an ambient wash. Unblurred they
-         read as hard discs sitting on top of the text. -->
-    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="58"/>
-    </filter>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="__GLOW__" stop-opacity="__GLOWOPACITY__"/>
+      <stop offset="100%" stop-color="__GLOW__" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
-  <rect width="1200" height="330" fill="__BG__"/>
-  <g filter="url(#soft)" opacity="__GLOWOPACITY__">
-    <circle class="blob"  cx="1060" cy="42"  r="118" fill="__GLOW__"/>
-    <circle class="blob2" cx="96"   cy="312" r="92"  fill="__VIOLET__"/>
-  </g>
+  <rect width="1200" height="{height}" rx="16" fill="__CARD__"/>
+  <rect x="0.5" y="0.5" width="1199" height="{height - 1}" rx="15.5" fill="none" stroke="__BORDER__"/>
+  <rect width="8" height="{height}" rx="4" fill="__PRIMARY__"/>
+  <g class="blob"><circle cx="1010" cy="70" r="240" fill="url(#glow)"/></g>
 
-  <g class="ttl">
-    <text x="40" y="80" font-family="__FONT__" font-size="38" font-weight="700"
-          fill="__TEXT__" letter-spacing="-0.8">BigQuery + dbt Cost Observability</text>
+  <g class="rise">
+    <text x="40" y="{eyebrow_y}" font-family="__FONT__" font-size="22" font-weight="700"
+          letter-spacing="3" fill="__PRIMARY__">BIGQUERY  ⇄  DBT</text>
   </g>
-  <!-- The strapline carries the whole point of the repo, so it is sized and
-       coloured to be read, not to be decorative: __TEXT__ at 17px rather than a
-       muted 14.5. The line under it is supporting detail and sits at __MUTED__ -
-       __FAINT__ was too low-contrast to read in either palette, and worse on
-       dark, where faint is darker than muted rather than lighter. -->
-  <g class="ttl" style="animation-delay:.1s">
-    <text x="40" y="116" font-family="__FONT__" font-size="20" fill="__TEXT__">
-      Two halves: what the whole warehouse costs, and what dbt costs inside it.
-    </text>
-    <text x="40" y="146" font-family="__MONO__" font-size="15" fill="__MUTED__">
-      Power BI semantic model  ·  runs on committed sample data, no cloud account needed
-    </text>
+  <rect class="rule" x="40" y="{rule_y}" width="1120" height="2" rx="1" fill="__BORDER__"/>
+  <g class="rise" style="animation-delay:.2s">
+    <text x="40" y="{sub1_y}" font-family="__FONT__" font-size="25"
+          fill="__MUTED__">Two halves: what the whole warehouse costs, and what dbt costs inside it.</text>
   </g>
-
-  <rect class="rule" x="40" y="164" width="1120" height="3" rx="1.5" fill="__PRIMARY__" opacity="0.85"/>
-  <g clip-path="url(#ruleClip)">
-    <rect class="sheen" x="40" y="164" width="160" height="3" fill="url(#sheenG)"/>
+  <g class="rise" style="animation-delay:.25s">
+    <text x="40" y="{sub2_y}" font-family="__MONO__" font-size="19"
+          fill="__MUTED__">Power BI semantic model  ·  runs on committed sample data, no cloud account needed</text>
   </g>
-{''.join(tiles)}
 {''.join(badge_svg)}
 </svg>
 """
@@ -459,137 +443,127 @@ def cta(p: dict, s: dict) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# 5. Section banners
+# 5. Section captions
 # --------------------------------------------------------------------------- #
 
-# Geometric glyphs rather than emoji: an SVG served through GitHub's image proxy
-# has no network access and cannot load a font, so an emoji would fall back to
-# whatever the renderer happens to have - or to a blank box. Drawn shapes look
-# the same everywhere.
-GLYPHS = {
-    "magnifier": """
-    <circle cx="0" cy="-3" r="15" fill="none" stroke="__ACCENT__" stroke-width="4"/>
-    <line x1="11" y1="8" x2="21" y2="18" stroke="__ACCENT__" stroke-width="5"
-          stroke-linecap="round"/>""",
-    "layers": """
-    <rect x="-17" y="7"   width="34" height="8" rx="2" fill="__ACCENT__" opacity="0.45"/>
-    <rect x="-17" y="-4"  width="34" height="8" rx="2" fill="__ACCENT__" opacity="0.72"/>
-    <rect x="-17" y="-15" width="34" height="8" rx="2" fill="__ACCENT__"/>""",
-    "play": """
-    <circle cx="0" cy="0" r="16" fill="none" stroke="__ACCENT__" stroke-width="4"/>
-    <path d="M -5.5 -8 L 9 0 L -5.5 8 Z" fill="__ACCENT__"/>""",
-}
-
+# Each section's eyebrow ("PART 1") and title now live as a real <h2> in the
+# README, not as pixels in this asset - a search engine and a screen reader
+# both read the heading, and the SVG shrinks to what it should have been all
+# along: a caption strip for the sentence under that heading.
 SECTIONS = {
     "section-query": {
-        "eyebrow": "PART 1",
+        "eyebrow": "Part 1",
         "title": "Query & Usage Insights",
-        "subtitle": "Every BigQuery job - who spends, on what, how long, and how much was cache.",
-        "note": "no dbt required",
+        "subtitle": "Every BigQuery job - who spends, on what, how long, and how much was cache. No dbt required.",
         "accent": "primary",
-        "glyph": "magnifier",
-        "chips": ["Performance Analysis", "Explore", "Query pattern drillthrough"],
     },
     "section-dbt": {
-        "eyebrow": "PART 2",
+        "eyebrow": "Part 2",
         "title": "dbt on BigQuery",
-        "subtitle": "What the transformation layer costs, how much it builds, and whether it is healthy.",
-        "note": "needs dbt_artifacts",
+        "subtitle": "What the transformation layer costs, how much it builds, and whether it is healthy. Needs dbt_artifacts.",
         "accent": "violet",
-        "glyph": "layers",
-        "chips": ["Overview", "Nodes failed", "Explore"],
     },
     "section-setup": {
-        "eyebrow": "PART 3",
+        "eyebrow": "Part 3",
         "title": "Run it yourself",
-        "subtitle": "Clone it, point it at the sample data or your own BigQuery, and refresh.",
-        "note": "offline by default",
+        "subtitle": "Clone it, point it at the sample data or your own BigQuery, and refresh. Offline by default.",
         "accent": "good",
-        "glyph": "play",
-        "chips": ["Quickstart", "Parameters", "Prerequisites"],
     },
 }
 
 
-def section(p: dict, s: dict, spec: dict) -> str:
+def caption(p: dict, s: dict, spec: dict) -> str:
     accent = p[spec["accent"]]
+    lines = wrap(spec["subtitle"], 104)
 
-    chips = []
-    cx = 92
-    for i, c in enumerate(spec["chips"]):
-        cw = 26 + len(c) * 8.6
-        chips.append(f"""
-  <g class="chip" style="animation-delay:{0.30 + i * 0.09:.2f}s">
-    <rect x="{cx:.0f}" y="132" width="{cw:.0f}" height="33" rx="16.5"
-          fill="__CARD__" stroke="__BORDER__"/>
-    <circle cx="{cx + 15:.0f}" cy="148.5" r="4" fill="{accent}"/>
-    <text x="{cx + 28:.0f}" y="154" font-family="__FONT__" font-size="15.5"
-          fill="__MUTED__">{esc(c)}</text>
-  </g>""")
-        cx += cw + 9
+    first_y, step = 46, 32
+    height = first_y + (len(lines) - 1) * step + 34
 
-    note_w = 24 + len(spec["note"]) * 8.4
+    body = "".join(f"""
+  <text x="40" y="{first_y + i * step}" font-family="__FONT__" font-size="22"
+        fill="__MUTED__">{esc(line)}</text>""" for i, line in enumerate(lines))
 
-    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 196" width="1200" height="196" role="img" aria-label="{esc(spec['eyebrow'])} - {esc(spec['title'])}">
+    label = esc_attr(f"{spec['eyebrow']} - {spec['title']}")
+
+    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 {height}"
+     width="1200" height="{height}" role="img" aria-label="{label}">
   <style>
-    /* Same rule as the hero: entrance animations only ever move things. The
-       resting state of every element is its final state, so the banner is fully
-       legible in a renderer that ignores CSS. */
-    /* The glyph is drawn centred on its own origin, so scaling about 0 0 scales
-       about its centre. Left as the CSS default of 50% 50% the reference box
-       differs between renderers and the glyph drifts as it scales. */
-    .glyph {{ animation: pop .5s cubic-bezier(.2,.8,.3,1); transform-origin: 0 0 }}
-    .txt {{ animation: slidein .45s ease-out both }}
-    .chip {{ animation: slidein .4s ease-out both }}
-    .edge {{ animation: stretch .7s cubic-bezier(.2,.7,.3,1) }}
-    @keyframes pop {{ from {{ transform: scale(.82) }} to {{ transform: scale(1) }} }}
-    @keyframes slidein {{ from {{ transform: translateX(-10px) }}
-                          to   {{ transform: translateX(0) }} }}
-    @keyframes stretch {{ from {{ height: 0 }} to {{ height: 196px }} }}
-    @media (prefers-reduced-motion: reduce) {{
-      .glyph,.txt,.chip,.edge {{ animation: none }}
-    }}
+    .rise {{ animation: rise .55s cubic-bezier(.2,.7,.3,1) both; }}
+    @keyframes rise {{ from {{ transform: translateY(9px) }} to {{ transform: translateY(0) }} }}
+    @media (prefers-reduced-motion: reduce) {{ * {{ animation: none !important }} }}
   </style>
   <defs>
-    <linearGradient id="wash" x1="0" x2="1">
+    <linearGradient id="wash" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%"   stop-color="{accent}" stop-opacity="__WASH__"/>
       <stop offset="100%" stop-color="{accent}" stop-opacity="0"/>
     </linearGradient>
   </defs>
+  <rect width="1200" height="{height}" rx="12" fill="__CARD__"/>
+  <rect width="1200" height="{height}" rx="12" fill="url(#wash)"/>
+  <rect width="6" height="{height}" rx="3" fill="{accent}"/>
+  <g class="rise">{body}
+  </g>
+</svg>
+"""
+    return paint(template, p)
 
-  <rect width="1200" height="196" fill="__BG__"/>
-  <rect width="640" height="196" fill="url(#wash)"/>
-  <rect class="edge" x="0" y="0" width="6" height="196" fill="{accent}"/>
 
-  <!-- Two nested groups on purpose. A CSS `transform` in the animation would
-       override the SVG transform attribute on the same element, so animating
-       scale on the positioned group snaps the glyph to the origin. The outer
-       group positions, the inner one animates. -->
-  <g transform="translate(52,70)">
-    <g class="glyph">{GLYPHS[spec['glyph']].replace('__ACCENT__', accent)}</g>
-  </g>
+# --------------------------------------------------------------------------- #
+# 6. "Where your money goes" card strip
+# --------------------------------------------------------------------------- #
 
-  <g class="txt">
-    <text x="92" y="46" font-family="__FONT__" font-size="17" font-weight="700"
-          fill="{accent}" letter-spacing="2">{esc(spec['eyebrow'])}</text>
-  </g>
-  <g class="txt" style="animation-delay:.06s">
-    <text x="92" y="86" font-family="__FONT__" font-size="31" font-weight="700"
-          fill="__TEXT__" letter-spacing="-0.5">{esc(spec['title'])}</text>
-  </g>
-  <g class="txt" style="animation-delay:.12s">
-    <text x="92" y="116" font-family="__FONT__" font-size="17.5"
-          fill="__MUTED__">{esc(spec['subtitle'])}</text>
-  </g>
+def savings_strip(p: dict, s: dict) -> str:
+    """Three cards making the business case, each stat read straight out of
+    summary.json so it cannot drift from what the report actually shows."""
+    dbt_pct = round(s["spend_dbt"] / s["spend_total"] * 100, 1)
 
-  <g class="txt" style="animation-delay:.18s">
-    <rect x="{1164 - note_w:.0f}" y="36" width="{note_w:.0f}" height="32" rx="16"
-          fill="{accent}" fill-opacity="0.14" stroke="{accent}" stroke-opacity="0.45"/>
-    <text x="{1164 - note_w / 2:.0f}" y="57" text-anchor="middle"
-          font-family="__FONT__" font-size="15" font-weight="600"
-          fill="{accent}">{esc(spec['note'])}</text>
-  </g>
-{''.join(chips)}
+    cards = [
+        ("💸", "See where it goes", "primary",
+         "Cost broken down by user, model, table and hour - not one number from a billing console.",
+         f"${s['spend_total']:,.2f}  ·  {s['users']} users  ·  {s['models']} models"),
+        ("🎯", "Know what to fix first", "violet",
+         "The transformation layer is not a rounding error next to interactive usage.",
+         f"{dbt_pct}% of spend is dbt"),
+        ("🧊", "Stop paying for nothing", "bad",
+         "Cache hits bill nothing, and every query still pays a 10 MB floor whether it needs it or not.",
+         f"{s['waste_gb']} GB billed, never scanned"),
+    ]
+
+    gap = 20
+    w = (1200 - gap * (len(cards) - 1)) // len(cards)
+    wrapped = [wrap(body, 36) for _, _, _, body, _ in cards]
+    body_y0, body_step = 158, 31
+    height = body_y0 + max(len(b) for b in wrapped) * body_step + 56
+
+    out = []
+    for i, ((icon, title, colour, _body, stat), body) in enumerate(zip(cards, wrapped)):
+        accent = p[colour]
+        x = i * (w + gap)
+        lines = "".join(f"""
+    <text x="{x + 28}" y="{body_y0 + j * body_step}" font-family="__FONT__" font-size="21"
+          fill="__MUTED__">{esc(line)}</text>""" for j, line in enumerate(body))
+        foot_y = height - 32
+        out.append(f"""
+  <g class="rise" style="animation-delay:{0.15 + i * 0.12:.2f}s">
+    <rect x="{x}" y="0" width="{w}" height="{height}" rx="14" fill="__CARD__" stroke="__BORDER__"/>
+    <rect x="{x}" y="0" width="{w}" height="5" rx="2.5" fill="{accent}"/>
+    <circle cx="{x + 52}" cy="64" r="28" fill="{accent}" fill-opacity="0.14"/>
+    <text x="{x + 52}" y="75" text-anchor="middle" font-family="__FONT__" font-size="29">{icon}</text>
+    <text x="{x + 28}" y="124" font-family="__FONT__" font-size="26" font-weight="700"
+          fill="__TEXT__" letter-spacing="-0.4">{esc(title)}</text>{lines}
+    <rect x="{x + 28}" y="{foot_y - 23}" width="{w - 56}" height="1" fill="__BORDER__"/>
+    <text x="{x + 28}" y="{foot_y}" font-family="__FONT__" font-size="19.5" font-weight="700"
+          fill="{accent}" letter-spacing="0.3">{esc(stat)}</text>
+  </g>""")
+
+    template = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 {height}"
+     width="1200" height="{height}" role="img" aria-label="Where your money goes - three reasons this report earns its place">
+  <style>
+    .rise {{ animation: rise .55s cubic-bezier(.2,.7,.3,1) both; }}
+    @keyframes rise {{ from {{ transform: translateY(9px) }} to {{ transform: translateY(0) }} }}
+    @media (prefers-reduced-motion: reduce) {{ .rise {{ animation: none }} }}
+  </style>
+{''.join(out)}
 </svg>
 """
     return paint(template, p)
@@ -606,15 +580,26 @@ def main() -> None:
     ASSETS.mkdir(parents=True, exist_ok=True)
 
     builders = {"hero": hero, "cta": cta, "architecture": architecture,
-                "attribution": attribution}
-    for name, spec in SECTIONS.items():
-        builders[name] = partial(section, spec=spec)
+                "attribution": attribution, "strip-why": savings_strip}
     for name, fn in builders.items():
         for palette in (LIGHT, DARK):
             out = ASSETS / f"{name}-{palette['name']}.svg"
             # write_bytes so no BOM can appear - Power BI and GitHub both dislike it.
             out.write_bytes(fn(palette, s).encode("utf-8"))
             print(f"  wrote {out.relative_to(ROOT)}  {out.stat().st_size / 1024:.1f} KB")
+
+    # The three "Part N" heading captions render light-only, on request - they
+    # sit directly under a real <h2> now, so there is no title baked in them to
+    # go illegible on a dark background, and one file per section is one fewer
+    # thing to keep in sync. No "-dark" variant is written for these.
+    for name, spec in SECTIONS.items():
+        out = ASSETS / f"{name}-light.svg"
+        out.write_bytes(caption(LIGHT, s, spec).encode("utf-8"))
+        print(f"  wrote {out.relative_to(ROOT)}  {out.stat().st_size / 1024:.1f} KB  (light-only)")
+        stale_dark = ASSETS / f"{name}-dark.svg"
+        if stale_dark.exists():
+            stale_dark.unlink()
+            print(f"  removed {stale_dark.relative_to(ROOT)}  (light-only now)")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 307"
+     width="1200" height="307" role="img" aria-label="Where your money goes - three reasons this report earns its place">
+  <style>
+    .rise { animation: rise .55s cubic-bezier(.2,.7,.3,1) both; }
+    @keyframes rise { from { transform: translateY(9px) } to { transform: translateY(0) } }
+    @media (prefers-reduced-motion: reduce) { .rise { animation: none } }
+  </style>
+
+  <g class="rise" style="animation-delay:0.15s">
+    <rect x="0" y="0" width="386" height="307" rx="14" fill="#F6F8FA" stroke="#D0D7DE"/>
+    <rect x="0" y="0" width="386" height="5" rx="2.5" fill="#2563EB"/>
+    <circle cx="52" cy="64" r="28" fill="#2563EB" fill-opacity="0.14"/>
+    <text x="52" y="75" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="29">💸</text>
+    <text x="28" y="124" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="26" font-weight="700"
+          fill="#1F2328" letter-spacing="-0.4">See where it goes</text>
+    <text x="28" y="158" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">Cost broken down by user, model,</text>
+    <text x="28" y="189" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">table and hour - not one number from</text>
+    <text x="28" y="220" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">a billing console.</text>
+    <rect x="28" y="252" width="330" height="1" fill="#D0D7DE"/>
+    <text x="28" y="275" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="19.5" font-weight="700"
+          fill="#2563EB" letter-spacing="0.3">$662.98  ·  6 users  ·  25 models</text>
+  </g>
+  <g class="rise" style="animation-delay:0.27s">
+    <rect x="406" y="0" width="386" height="307" rx="14" fill="#F6F8FA" stroke="#D0D7DE"/>
+    <rect x="406" y="0" width="386" height="5" rx="2.5" fill="#7C3AED"/>
+    <circle cx="458" cy="64" r="28" fill="#7C3AED" fill-opacity="0.14"/>
+    <text x="458" y="75" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="29">🎯</text>
+    <text x="434" y="124" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="26" font-weight="700"
+          fill="#1F2328" letter-spacing="-0.4">Know what to fix first</text>
+    <text x="434" y="158" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">The transformation layer is not a</text>
+    <text x="434" y="189" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">rounding error next to interactive</text>
+    <text x="434" y="220" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">usage.</text>
+    <rect x="434" y="252" width="330" height="1" fill="#D0D7DE"/>
+    <text x="434" y="275" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="19.5" font-weight="700"
+          fill="#7C3AED" letter-spacing="0.3">71.0% of spend is dbt</text>
+  </g>
+  <g class="rise" style="animation-delay:0.39s">
+    <rect x="812" y="0" width="386" height="307" rx="14" fill="#F6F8FA" stroke="#D0D7DE"/>
+    <rect x="812" y="0" width="386" height="5" rx="2.5" fill="#DC2626"/>
+    <circle cx="864" cy="64" r="28" fill="#DC2626" fill-opacity="0.14"/>
+    <text x="864" y="75" text-anchor="middle" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="29">🧊</text>
+    <text x="840" y="124" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="26" font-weight="700"
+          fill="#1F2328" letter-spacing="-0.4">Stop paying for nothing</text>
+    <text x="840" y="158" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">Cache hits bill nothing, and every</text>
+    <text x="840" y="189" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">query still pays a 10 MB floor</text>
+    <text x="840" y="220" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="21"
+          fill="#656D76">whether it needs it or not.</text>
+    <rect x="840" y="252" width="330" height="1" fill="#D0D7DE"/>
+    <text x="840" y="275" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="19.5" font-weight="700"
+          fill="#DC2626" letter-spacing="0.3">6.42 GB billed, never scanned</text>
+  </g>
+</svg>
