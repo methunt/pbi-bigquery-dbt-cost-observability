@@ -1,0 +1,7 @@
+{
+  "name": "pbi-bigquery-dbt-cost-observability",
+  "private": true,
+  "devDependencies": {
+    "@veedstudio/openedit-cli": "0.3.0"
+  }
+}

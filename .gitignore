@@ -16,3 +16,8 @@ __pycache__/
 # which crops Desktop's window chrome off them and writes the committed stills
 # alongside. Keeping both would double the repo for no reader benefit.
 screenshots/_raw/
+node_modules/
+runs/
+.open-edit-prefs.json
+.claude/*
+.omp/*
